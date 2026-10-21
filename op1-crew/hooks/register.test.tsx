@@ -1,0 +1,60 @@
+import { expect, test } from 'claude-code/testing'
+
+const PANE = {
+  plugin: 'op1-crew',
+  component: 'Pane',
+  requestId: 'op1-crew',
+  props: {
+    title: 'OP-1 · CREW',
+    isFocused: false,
+    bodyColumns: 40,
+    placement: 'dock',
+    scroll: { offset: 0, bodyRows: 40 },
+    view: {},
+  },
+} as const
+
+const boot = async ($: any, on: any) => {
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('command.register', () => ({ value: { command: 'crew' } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.turns', () => ({ value: 3 }))
+  on('tool.call', () => ({ result: {} }))
+  on('clock.every', () => ({ value: {} }))
+  on('clock.now', () => ({ value: 1_700_000_000_000 }))
+  on('session.cwd', () => ({ value: '/' }))
+  on('session.root', () => ({ value: '/' }))
+  on('process.run', () => ({ value: { exitCode: 1, stdout: '' } }))
+  on('store.get', () => ({ value: undefined }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+}
+
+test('a spawned subagent joins the crew as a figure and a todo becomes a task', async ($, on) => {
+  await boot($, on)
+
+  await $.agent.spawn({ prompt: 'look around', description: 'Explore the repo', subagentType: 'Explore' } as any)
+  await $.tool.call({
+    tool: 'TodoWrite',
+    todos: [{ content: 'Write the thing', status: 'in_progress', activeForm: 'Writing the thing' }],
+  })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /EXPLORE/ }))?.text).toBe('EXPLORE')
+  expect((await ui.find({ type: 'Image', key: 'guy-1' }))?.props.alt).toBe('EXPLORE think')
+  expect((await ui.find({ type: 'Text', text: /Writing the thing/ }))?.text).toMatch(/Writing the thing/)
+  expect((await ui.find({ type: 'Image', key: 'tasks' }))?.props.alt).toBe('tasks 0/1')
+  await ui.unmount()
+})
+
+test('a Bash call lights the SHELL gauge', async ($, on) => {
+  await boot($, on)
+  await $.tool.call({ tool: 'Bash', command: 'ls' })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Image', key: 'dial-SHELL' }))?.props.alt).toBe('SHELL 1')
+  expect((await ui.find({ type: 'Image', key: 'clock' }))?.props.alt).toBe('turn 3 idle')
+  expect((await ui.find({ type: 'Text', text: /ls/ }))?.text).toMatch(/● 00:00 {3} ls$/)
+  await ui.unmount()
+})

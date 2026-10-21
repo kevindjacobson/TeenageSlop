@@ -1,0 +1,501 @@
+import { atom, read, update } from 'claude-code'
+import type { Register, StateDollar } from 'claude-code'
+
+import { BLUE, GREEN, GREY, ORANGE, WHITE } from './pixels'
+import { DIAL_ROWS, TASK_ROWS, WORK_ROWS, drawClock, drawDial, drawFigure, drawMachine, drawTasks, drawTitle, drawWork, gaugeLayout, kindOf } from './scene'
+import type { Pose } from './scene'
+import type { Guy, Machine, Shell, Track, Turn, Work } from '../types'
+
+const PANE = 'op1-crew'
+const TITLE = 'OP-1 · CREW'
+const CREW_COLORS = [GREEN, WHITE, ORANGE, BLUE]
+const HEADER_ROWS = 4
+const CLOCK_COLS = 30
+const MACHINE_COLS = 22
+const LEAD_COLS = 14
+const LEAD_ROWS = 7
+const GUY_ROWS = 7
+
+const crew = atom({ plugin: 'op1-crew', key: 'crew' } as const, [])
+const tracks = atom({ plugin: 'op1-crew', key: 'tracks' } as const, [])
+const meters = atom({ plugin: 'op1-crew', key: 'meters' } as const, {})
+const ticker = atom({ plugin: 'op1-crew', key: 'ticker' } as const, [])
+const frame = atom({ plugin: 'op1-crew', key: 'frame' } as const, 0)
+const turn = atom({ plugin: 'op1-crew', key: 'turn' } as const, { isActive: false, startedAt: 0, elapsed: 0, count: 0 })
+const machine = atom({ plugin: 'op1-crew', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0 })
+const shells = atom({ plugin: 'op1-crew', key: 'shells' } as const, [])
+const work = atom({ plugin: 'op1-crew', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
+
+type WorkDollar = StateDollar & { process: { run: (argv: readonly string[], init?: { cwd?: string }) => Promise<{ exitCode: number; stdout: string }> }; session: { cwd: () => Promise<string>; root: () => Promise<string> } }
+
+// the engine's own task list replaces whatever the session kept
+type TaskDollar = StateDollar & { tool: { call: (input: { tool: 'TaskList' }) => Promise<{ deny?: string; isError?: boolean; result?: { tasks?: { id: string; subject: string; status: Track['status'] }[] } }> } }
+const syncTasks = async ($: unknown) => {
+  try {
+    const ran = await ($ as TaskDollar).tool.call({ tool: 'TaskList' })
+    if (ran.deny !== undefined || ran.isError || !ran.result?.tasks) return
+    const list = ran.result.tasks.map(t => ({ id: t.id, text: t.subject, status: t.status }))
+    await update($ as StateDollar, tracks, () => list)
+  } catch {
+    // no task tools in this session: the tool-driven list stands
+  }
+}
+
+const git = async ($: WorkDollar, cwd: string, ...args: string[]) => {
+  try {
+    const ran = await $.process.run(['git', ...args], { cwd })
+    return ran.exitCode === 0 ? ran.stdout.trim() : ''
+  } catch {
+    return ''
+  }
+}
+
+// where the crew works now: the branch, and the worktree when not the main one
+const measureWork = async ($: WorkDollar) => {
+  const [cwd, root] = await Promise.all([$.session.cwd(), $.session.root()])
+  const [branch, top, common] = await Promise.all([
+    git($, cwd, 'symbolic-ref', '--short', 'HEAD'),
+    git($, cwd, 'rev-parse', '--show-toplevel'),
+    git($, cwd, 'rev-parse', '--git-common-dir'),
+  ])
+  const isWorktree = top !== '' && common !== '' && common !== '.git' && !common.endsWith('/.git') === false && !top.endsWith(common.replace(/\/\.git$/, ''))
+  const worktree = isWorktree ? top.split('/').pop() ?? '' : ''
+  await update($, work, w => ({ ...w, cwd, branch: branch === 'HEAD' ? 'detached' : branch, worktree }))
+  void root
+}
+
+const LEAD: Guy = { id: 'lead', kind: 'lead', name: 'LEAD', color: BLUE, job: 'standing by', isBusy: false, isDone: false, isFailed: false, isWaiting: false }
+
+const CHANNELS: [string, RegExp][] = [
+  ['READ', /^(Read|Glob|Grep|LS|NotebookRead)$/],
+  ['EDIT', /^(Edit|Write|MultiEdit|NotebookEdit)$/],
+  ['SHELL', /^(Bash|Monitor|BashOutput|KillShell)$/],
+  ['WEB', /^(WebFetch|WebSearch)$/],
+  ['AGENT', /^(Agent|Task|SendMessage)$/],
+  ['SKILL', /^Skill$/],
+  ['MCP', /^mcp__/],
+]
+const channelOf = (tool: string) => CHANNELS.find(([, re]) => re.test(tool))?.[0] ?? 'OTHER'
+
+const asRgb = (c: unknown): number =>
+  typeof c === 'number' ? c : typeof c === 'string' && /^#?[0-9a-f]{6}$/i.test(c) ? parseInt(c.replace('#', ''), 16) : WHITE
+
+const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`
+
+const short = (text: string, n: number) => (text.length > n ? text.slice(0, Math.max(0, n - 1)) + '…' : text)
+
+const poseOf = (g: Guy): Pose =>
+  g.isFailed ? 'fail' : g.isWaiting ? 'wait' : g.isDone ? 'done' : g.isBusy ? (g.tool ? 'work' : 'think') : 'idle'
+
+// each picture is drawn once per distinct input: drawing and shipping pixels is the costly part
+const pictures = new Map<string, { rgba: string; width: number; height: number }>()
+const memo = (key: string, draw: () => { rgba: string; width: number; height: number }) => {
+  const hit = pictures.get(key)
+  if (hit) return hit
+  if (pictures.size > 256) pictures.clear()
+  const made = draw()
+  pictures.set(key, made)
+  return made
+}
+
+// how many frames a pose cycles over, so its pictures repeat from the memo
+const CYCLE: Record<Pose, number> = { idle: 1, think: 6, work: 2, wait: 2, done: 1, fail: 1 }
+
+const say = ($: StateDollar, line: string) => update($, ticker, list => [...list, line].slice(-3))
+
+const setGuy = ($: StateDollar, match: (g: Guy) => boolean, fn: (g: Guy) => Guy) =>
+  update($, crew, list => list.map(g => (match(g) ? fn(g) : g)))
+
+const byAgent = (agentId?: string) => (g: Guy) => (agentId ? g.agentId === agentId : g.id === 'lead')
+
+export const register: Register = on => {
+  on('session.start', async ($, e, next) => {
+    // state outlives a reload: bring entries the earlier version wrote up to this shape
+    await update($, crew, list => {
+      const fixed = list.map(g => ({ ...LEAD, ...g, color: asRgb(g.color as unknown), kind: g.kind ?? (g.id === 'lead' ? 'lead' : kindOf(g.name)) }))
+      return fixed.some(g => g.id === 'lead') ? fixed : [LEAD, ...fixed]
+    })
+    await update($, ticker, () => [])
+    const [model, count] = await Promise.all([$.session.model(), $.session.turns()])
+    await update($, machine, m => ({ ...m, model }))
+    await update($, turn, t => ({ ...t, count }))
+    await $.command.register({ name: 'crew', description: 'Open the OP-1 crew pane' })
+    await $.command.register({ name: 'crew-goal', description: 'Set the goal shown in the crew pane (empty clears it)', argumentHint: '<goal>' })
+    await measureWork($ as unknown as WorkDollar)
+    await syncTasks($)
+    const stored = await $.store.get(`goal:${await $.session.cwd()}`)
+    if (typeof stored === 'string') await update($, work, w => ({ ...w, goal: stored }))
+    void $.ui.open({ id: PANE, title: TITLE })
+
+    // the animation clock: only advances while someone is working
+    $.clock.every(1000, async () => {
+      const t = await read($, turn)
+      const list = await read($, crew)
+      if (!t.isActive && !list.some(g => g.isBusy || g.isWaiting)) return
+      await update($, frame, n => (n + 1) % 100000)
+      if (t.isActive) {
+        const now = await $.clock.now()
+        await update($, turn, x => ({ ...x, elapsed: now - x.startedAt }))
+      }
+    })
+
+    return next(e)
+  })
+
+  on('command.run', { command: 'crew-goal' }, async ($, e) => {
+    const goal = (e.args ?? '').trim()
+    await update($, work, w => ({ ...w, goal }))
+    await $.store.set(`goal:${await $.session.cwd()}`, goal)
+    return { text: goal ? `Goal set: ${goal}` : 'Goal cleared.' }
+  })
+
+  on('classic.CwdChanged', async ($, e, next) => {
+    await measureWork($ as unknown as WorkDollar)
+    return next(e)
+  })
+
+  on('classic.WorktreeCreate', async ($, e, next) => {
+    const ran = await next(e)
+    await measureWork($ as unknown as WorkDollar)
+    return ran
+  })
+
+  on('classic.WorktreeRemove', async ($, e, next) => {
+    const ran = await next(e)
+    await measureWork($ as unknown as WorkDollar)
+    return ran
+  })
+
+  on('tool.call', { tool: 'EnterPlanMode' }, async ($, e, next) => {
+    const ran = await next(e)
+    await update($, work, w => ({ ...w, isPlanning: true }))
+    return ran
+  })
+
+  on('tool.call', { tool: 'ExitPlanMode' }, async ($, e, next) => {
+    const ran = await next(e)
+    await update($, work, w => ({ ...w, isPlanning: false }))
+    return ran
+  })
+
+  // every shell command is a row under SHELL: live while it runs, then marked
+  // done or failed; a background one stays live until its notification lands.
+  // A git command that can move HEAD also refreshes the branch chip.
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const id = e.tool_use_id ?? `${await $.clock.now()}`
+    const startedAt = await $.clock.now()
+    const text = e.description?.trim() || e.command.trim().split('\n')[0] || 'shell'
+    const row: Shell = { id, text, startedAt, isBackground: e.run_in_background === true, isError: false, isInterrupted: false }
+    await update($, shells, list => [...list, row].slice(-12))
+
+    const ran = await next(e)
+
+    const endedAt = await $.clock.now()
+    const result = (ran.deny === undefined ? ran.result : undefined) as { backgroundTaskId?: string; interrupted?: boolean } | undefined
+    const taskId = result?.backgroundTaskId
+    await update($, shells, list =>
+      list.map(sh =>
+        sh.id !== id ? sh
+          : taskId ? { ...sh, isBackground: true, taskId }
+          : { ...sh, endedAt, isError: ran.deny !== undefined || ran.isError === true, isInterrupted: result?.interrupted === true },
+      ),
+    )
+    if (/\bgit\s+(checkout|switch|commit|merge|rebase|pull|worktree|init|branch)\b/.test(e.command)) await measureWork($ as unknown as WorkDollar)
+    return ran
+  })
+
+  // when the session stops, a background shell the engine no longer lists is over
+  on('classic.Stop', async ($, e, next) => {
+    const live = new Set((e.background_tasks ?? []).map(t => t.id))
+    const now = await $.clock.now()
+    await update($, shells, list => list.map(sh => (sh.taskId && sh.endedAt === undefined && !live.has(sh.taskId) ? { ...sh, endedAt: now } : sh)))
+    return next(e)
+  })
+
+  on('command.run', { command: 'crew' }, async $ => {
+    await $.ui.open({ id: PANE, title: TITLE })
+    return { text: 'Crew pane opened.' }
+  })
+
+  on('prompt.submit', async ($, e, next) => {
+    if (e.origin?.kind === 'task-notification') {
+      const taskId = /<task-id>([^<]+)<\/task-id>/.exec(e.text)?.[1]
+      const status = /<status>([^<]+)<\/status>/.exec(e.text)?.[1] ?? 'completed'
+      const now = await $.clock.now()
+      if (taskId) {
+        await update($, shells, list =>
+          list.map(sh => (sh.taskId === taskId && sh.endedAt === undefined ? { ...sh, endedAt: now, isError: status !== 'completed' } : sh)),
+        )
+      }
+      return next(e)
+    }
+    const now = await $.clock.now()
+    await update($, turn, t => ({ isActive: true, startedAt: now, elapsed: 0, count: t.count + 1 }))
+    // finished helpers go home when a new turn starts
+    await update($, crew, list =>
+      list
+        .filter(g => g.id === 'lead' || !g.isDone)
+        .map(g => (g.id === 'lead' ? { ...g, isBusy: true, isWaiting: false, isFailed: false, job: 'thinking', tool: undefined } : g)),
+    )
+    await say($, '▶ turn started')
+    return next(e)
+  })
+
+  on('classic.UserPromptSubmit', async ($, e, next) => {
+    if (e.permission_mode) await update($, machine, m => ({ ...m, mode: e.permission_mode ?? m.mode }))
+    return next(e)
+  })
+
+  on('session.measure', async ($, e, next) => {
+    const percent = e.context.percent
+    if (percent !== undefined) await update($, machine, m => ({ ...m, ctxPercent: percent }))
+    return next(e)
+  })
+
+  on('turn.complete', async ($, e, next) => {
+    if (!('agentId' in e && e.agentId)) {
+      await update($, turn, x => ({ ...x, isActive: false }))
+      await setGuy($, byAgent(), g => ({
+        ...g,
+        isBusy: false,
+        isWaiting: false,
+        isFailed: e.reason === 'error',
+        job: e.reason === 'aborted' ? 'interrupted' : e.reason === 'error' ? 'error' : 'standing by',
+        tool: undefined,
+      }))
+      await say($, e.reason === 'aborted' ? '■ interrupted' : e.reason === 'error' ? '✕ turn failed' : '■ turn done')
+    }
+    return next(e)
+  })
+
+  on('tool.call', async ($, e, next) => {
+    const channel = channelOf(e.tool)
+    await update($, meters, m => ({ ...m, [channel]: (m[channel] ?? 0) + 1 }))
+    await setGuy($, byAgent(e.agentId), g => ({ ...g, isBusy: true, isWaiting: false, tool: e.tool, job: g.id === 'lead' ? 'working' : g.job }))
+
+    const ran = await next(e)
+
+    if (ran.deny === undefined && ran.isError) {
+      await say($, `✕ ${e.tool} failed`)
+    }
+    // back to thinking between calls; the next call sets a tool again
+    await setGuy($, byAgent(e.agentId), g => ({ ...g, tool: undefined }))
+    return ran
+  })
+
+  // tasks: the classic TodoWrite list replaces the list wholesale
+  on('tool.call', { tool: 'TodoWrite' }, async ($, e, next) => {
+    await update($, tracks, () =>
+      e.todos.map((t, i) => ({ id: String(i + 1), text: t.status === 'in_progress' ? t.activeForm : t.content, status: t.status })),
+    )
+    return next(e)
+  })
+
+  // tasks: the task tools add and move one at a time
+  on('tool.call', { tool: 'TaskCreate' }, async ($, e, next) => {
+    const ran = await next(e)
+    if (ran.deny === undefined && !ran.isError && ran.result?.task) {
+      const task = ran.result.task
+      await update($, tracks, list => [...list, { id: task.id, text: task.subject, status: 'pending' as const }])
+    }
+    return ran
+  })
+
+  on('tool.call', { tool: 'TaskUpdate' }, async ($, e, next) => {
+    const ran = await next(e)
+    const status = e.status
+    await update($, tracks, list =>
+      status === 'deleted'
+        ? list.filter(t => t.id !== e.taskId)
+        : list.map(t => (t.id === e.taskId ? { ...t, text: e.subject ?? t.text, status: status ?? t.status } : t)),
+    )
+    return ran
+  })
+
+  on('agent.spawn', async ($, e, next) => {
+    const list = await read($, crew)
+    const guy: Guy = {
+      id: e.tool_use_id || `${list.length}`,
+      kind: kindOf(e.subagentType || ''),
+      name: (e.subagentType || 'helper').toUpperCase(),
+      color: CREW_COLORS[list.length % CREW_COLORS.length] ?? WHITE,
+      job: e.description,
+      isBusy: true,
+      isDone: false,
+      isFailed: false,
+      isWaiting: false,
+    }
+    await update($, crew, all => [...all, guy].slice(-9))
+    await say($, `+ ${guy.name} joins`)
+
+    const ran = await next(e)
+    if (ran.deny === undefined && ran.agentId) {
+      await setGuy($, g => g.id === guy.id, g => ({ ...g, agentId: ran.agentId }))
+    }
+    return ran
+  })
+
+  on('classic.SubagentStop', async ($, e, next) => {
+    await setGuy($, g => g.agentId === e.agent_id, g => ({ ...g, isBusy: false, isDone: true, tool: undefined }))
+    return next(e)
+  })
+
+  // waiting on the person (a permission prompt, idle input): the lead raises a hand
+  on('classic.Notification', async ($, e, next) => {
+    await setGuy($, byAgent(), g => ({ ...g, isWaiting: true, job: 'needs you' }))
+    await say($, `✋ ${short(e.message, 40)}`)
+    return next(e)
+  })
+
+  on('skill.prompt', async ($, e, next) => {
+    await say($, `◆ skill ${e.skill}`)
+    return next(e)
+  })
+
+  on('session.compact', async ($, e, next) => {
+    await say($, '◀◀ compacting context')
+    return next(e)
+  })
+
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    const [guys, list, levels, lines, f, t, m, w, shellRows] = await Promise.all([
+      read($, crew), read($, tracks), read($, meters), read($, ticker), read($, frame), read($, turn), read($, machine), read($, work), read($, shells),
+    ])
+    const now = t.startedAt + t.elapsed
+    const mmss = (ms: number) => {
+      const s = Math.max(0, Math.floor(ms / 1000))
+      return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+    }
+    const width = Math.max(24, e.props.bodyColumns ?? 40)
+    const lead = guys.find(g => g.id === 'lead') ?? LEAD
+    const helpers = guys.filter(g => g.id !== 'lead')
+    const peak = Math.max(1, ...Object.values(levels))
+    const dials = [...CHANNELS.map(([c]) => c), 'OTHER']
+      .filter(c => levels[c])
+      .map((label, i) => ({ label, value: levels[label] ?? 0, color: CREW_COLORS[(i + 3) % CREW_COLORS.length] ?? WHITE }))
+    const done = list.filter(x => x.status === 'completed').length
+
+    if (e.surface !== 'terminal') {
+      const { Box, Text } = $.ui.resolve(e)
+      return (
+        <Box flexDirection="column">
+          <Text>{lead.job} · tasks {done}/{list.length}</Text>
+          {helpers.map(g => <Text key={g.id}>{g.name}: {g.job}</Text>)}
+        </Box>
+      )
+    }
+
+    const { Box, Image, Text } = $.ui.resolve(e)
+    const seconds = Math.floor(t.elapsed / 1000)
+    const clockPic = memo(`clock:${width}:${t.isActive}:${seconds}:${t.count}`, () =>
+      drawClock(Math.min(CLOCK_COLS, width), HEADER_ROWS, { isActive: t.isActive, elapsedMs: seconds * 1000, turns: t.count }))
+    const machinePic = memo(`machine:${m.model}:${m.mode}:${m.ctxPercent}`, () =>
+      drawMachine(MACHINE_COLS, HEADER_ROWS, m))
+    const figure = (cols: number, rows: number, g: Guy) => {
+      const pose = poseOf(g)
+      const step = f % CYCLE[pose]
+      return memo(`fig:${cols}:${rows}:${g.kind}:${g.color}:${pose}:${step}`, () => drawFigure(cols, rows, g.color, pose, step, g.kind))
+    }
+    const guyW = Math.min(18, Math.max(LEAD_COLS, ...helpers.map(g => g.name.length + 1)))
+    const guyCols = Math.max(1, Math.floor((width - LEAD_COLS) / guyW))
+    const bodyRows = e.props.scroll?.bodyRows ?? e.viewport?.rows ?? 40
+    const guyRows: Guy[][] = []
+    for (let i = 0; i < helpers.length; i += guyCols) guyRows.push(helpers.slice(i, i + guyCols))
+    const { perRow, dialColumns } = gaugeLayout(width, dials.length)
+    const dialRows: typeof dials[] = []
+    for (let i = 0; i < dials.length; i += perRow) dialRows.push(dials.slice(i, i + perRow))
+    const dial = (d: (typeof dials)[number]) =>
+      memo(`dial:${dialColumns}:${d.label}:${d.value}:${peak}:${d.color}`, () => drawDial(dialColumns, d, peak))
+    const title = (label: string) => (
+      <Box flexDirection="column" marginTop={1}>
+        <Image key={`title-${label}`} source={memo(`title:${width}:${label}`, () => drawTitle(width, label))} columns={width} rows={1} alt={label} />
+      </Box>
+    )
+    const workCols = Math.min(width, 60)
+    const workPic = memo(`work:${workCols}:${w.branch}:${w.worktree}:${w.isPlanning}`, () => drawWork(workCols, w))
+    const blink = list.some(x => x.status === 'in_progress') ? f % 2 : 0
+    const taskLine = memo(`tasks:${width}:${list.map(x => x.status[0]).join('')}:${blink}`, () => drawTasks(width, list, blink))
+
+    return (
+      <Box flexDirection="column" width={width} minHeight={bodyRows} backgroundColor="#000000">
+        <Box flexDirection="row" justifyContent="space-between">
+          <Image key="clock" source={clockPic} columns={Math.min(CLOCK_COLS, width)} rows={HEADER_ROWS} alt={`turn ${t.count} ${t.isActive ? 'running' : 'idle'}`} />
+          {width >= CLOCK_COLS + MACHINE_COLS && (
+            <Image key="machine" source={machinePic} columns={MACHINE_COLS} rows={HEADER_ROWS} alt={`${m.model} ${m.mode} ctx ${m.ctxPercent}%`} />
+          )}
+        </Box>
+
+        {title('CREW')}
+        <Box flexDirection="row">
+          <Box flexDirection="column" width={LEAD_COLS}>
+            <Image key="lead" source={figure(LEAD_COLS, LEAD_ROWS, lead)} columns={LEAD_COLS} rows={LEAD_ROWS} alt={`lead ${poseOf(lead)}`} />
+          </Box>
+          <Box flexDirection="column">
+            {guyRows.map((row, r) => (
+              <Box key={`row${r}`} flexDirection="row">
+                {row.map(g => (
+                  <Box key={g.id} flexDirection="column" width={guyW}>
+                    <Image key={`guy-${g.id}`} source={figure(guyW, GUY_ROWS, g)} columns={guyW} rows={GUY_ROWS} alt={`${g.name} ${poseOf(g)}`} />
+                    <Text color={hex(g.color)}>{short(g.name, guyW - 1)}</Text>
+                  </Box>
+                ))}
+              </Box>
+            ))}
+            {helpers.length === 0 && <Text color="#6f7173">no subagents</Text>}
+          </Box>
+        </Box>
+        <Text color="#6f7173">
+          <Text color="#4d9eff">LEAD</Text> {short(lead.tool ?? lead.job, width - 5)}
+        </Text>
+        {helpers.filter(g => !g.isDone).map(g => (
+          <Text key={`job-${g.id}`} color="#6f7173">
+            <Text color={hex(g.color)}>{g.name}</Text> {short(g.job, width - g.name.length - 1)}
+          </Text>
+        ))}
+
+        {title('WORK')}
+        <Image key="work" source={workPic} columns={workCols} rows={WORK_ROWS} alt={`${w.branch} ${w.worktree} ${w.isPlanning ? 'plan' : 'build'}`} />
+        {w.goal !== '' && (
+          <Text color="#ffffff">
+            <Text color="#6f7173">GOAL </Text>{short(w.goal, width - 5)}
+          </Text>
+        )}
+        {title('TASKS')}
+        <Image key="tasks" source={taskLine} columns={width} rows={TASK_ROWS} alt={`tasks ${done}/${list.length}`} />
+        {list.slice(-10).map(x => (
+          <Text key={`t${x.id}`} color={x.status === 'completed' ? '#6f7173' : x.status === 'in_progress' ? '#ff3a5d' : '#ffffff'}>
+            {x.status === 'completed' ? '●' : x.status === 'in_progress' ? (f % 2 ? '◉' : '○') : '○'} {short(x.text, width - 2)}
+          </Text>
+        ))}
+
+        {dialRows.length > 0 && title('TOOLS')}
+        {dialRows.map((row, r) => (
+          <Box key={`dials${r}`} flexDirection="row">
+            {row.map(d => (
+              <Image key={`dial-${d.label}`} source={dial(d)} columns={dialColumns} rows={DIAL_ROWS} alt={`${d.label} ${d.value}`} />
+            ))}
+          </Box>
+        ))}
+
+        {shellRows.length > 0 && title('SHELL')}
+        {shellRows.slice(-8).map(sh => {
+          const isLive = sh.endedAt === undefined
+          const glyph = isLive ? (f % 2 ? '▶' : '▷') : sh.isError ? '✕' : sh.isInterrupted ? '■' : '●'
+          const color = isLive ? '#ffffff' : sh.isError ? '#ff3a5d' : '#6f7173'
+          return (
+            <Text key={`sh-${sh.id}`} color={color}>
+              {glyph} <Text color={isLive ? '#00ed95' : '#6f7173'}>{mmss((sh.endedAt ?? now) - sh.startedAt)}</Text>
+              {sh.isBackground ? <Text color="#4d9eff"> BG</Text> : '   '} {short(sh.text, width - 12)}
+            </Text>
+          )
+        })}
+
+        {lines.length > 0 && title('LOG')}
+        {lines.map((line, i) => (
+          <Text key={`l${i}`} color={i === lines.length - 1 ? (line.startsWith('✕') ? '#ff3a5d' : '#ffffff') : '#6f7173'}>{short(line, width)}</Text>
+        ))}
+      </Box>
+    )
+  })
+}
+

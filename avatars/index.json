@@ -1,0 +1,156 @@
+[
+  {
+    "type": "lead",
+    "pose": "idle",
+    "file": "svg/lead-idle.svg",
+    "accent": null,
+    "description": "Headband sprinter crouched at the start, fingertips on the ground and one knee forward; nine-athlete idle concept."
+  },
+  {
+    "type": "lead",
+    "pose": "think",
+    "file": "svg/lead-think.svg",
+    "accent": "#FFFFFF",
+    "description": "Sprinter thinking with one hand at the chin, the other arm folded, and three overhead dots; dedicated lead THINK concept."
+  },
+  {
+    "type": "lead",
+    "pose": "work",
+    "file": "svg/lead-work.svg",
+    "accent": null,
+    "description": "Headband sprinter leaning into a long running stride, rounded pumping fists and four speed dashes; dedicated lead WORK concept."
+  },
+  {
+    "type": "lead",
+    "pose": "wait",
+    "file": "svg/lead-wait.svg",
+    "accent": "#FFFFFF",
+    "description": "Sprinter standing with one closed hand raised and an exclamation mark above the head; dedicated lead WAIT concept."
+  },
+  {
+    "type": "lead",
+    "pose": "done",
+    "file": "svg/lead-done.svg",
+    "accent": "#00ED95",
+    "description": "Sprinter crossing a green waving finish tape, both fists raised and one heel kicked back; dedicated lead DONE concept."
+  },
+  {
+    "type": "lead",
+    "pose": "fail",
+    "file": "svg/lead-fail.svg",
+    "accent": null,
+    "description": "Derived recovery pose: headband sprinter bent forward with hands braced on knees, preserving the lead singlet, shorts and trainers."
+  },
+  {
+    "type": "explore",
+    "pose": "idle",
+    "file": "svg/explore-idle.svg",
+    "accent": null,
+    "description": "Swimmer upright in cap and goggles, scoop-neck swimsuit with briefs and long bare legs; nine-athlete idle concept."
+  },
+  {
+    "type": "explore",
+    "pose": "work",
+    "file": "svg/explore-work.svg",
+    "accent": "#4D9EFF",
+    "description": "Capped swimmer diving diagonally down toward two wave lines with pointed hands and trailing motion marks; action-four EXPLORE concept."
+  },
+  {
+    "type": "plan",
+    "pose": "idle",
+    "file": "svg/plan-idle.svg",
+    "accent": "#FF3A5D",
+    "description": "Ponytailed archer aiming a drawn bow, wearing a crossed strap, fitted top, shorts and boots; nine-athlete idle concept."
+  },
+  {
+    "type": "plan",
+    "pose": "work",
+    "file": "svg/plan-work.svg",
+    "accent": "#00ED95",
+    "description": "Archer releasing an arrow with a fully extended bow arm, wide stance and small motion ticks; action-four PLAN concept."
+  },
+  {
+    "type": "general-purpose",
+    "pose": "idle",
+    "file": "svg/general-purpose-idle.svg",
+    "accent": "#FFFFFF",
+    "description": "Curly-haired hurdler suspended above a rectangular hurdle, lead leg extended and trail leg tucked; nine-athlete idle concept."
+  },
+  {
+    "type": "general-purpose",
+    "pose": "work",
+    "file": "svg/general-purpose-work.svg",
+    "accent": "#FFFFFF",
+    "description": "Derived hurdler clearance with a straighter lead leg and swept trailing leg; keeps the idle curls, vest, shorts, trainers and hurdle."
+  },
+  {
+    "type": "guide",
+    "pose": "idle",
+    "file": "svg/guide-idle.svg",
+    "accent": "#FF3A5D",
+    "description": "Cap-wearing coach with a tilted clipboard at one hip and whistle hanging from a V-shaped lanyard; nine-athlete idle concept."
+  },
+  {
+    "type": "guide",
+    "pose": "work",
+    "file": "svg/guide-work.svg",
+    "accent": "#FF3A5D",
+    "description": "Derived coach directing left with an outstretched arm, retaining the cap, lanyard whistle, shorts and clipboard from idle."
+  },
+  {
+    "type": "review",
+    "pose": "idle",
+    "file": "svg/review-idle.svg",
+    "accent": "#4D9EFF",
+    "description": "Striped referee holding a raised scorecard showing an outlined 10, with the free arm relaxed; nine-athlete idle concept."
+  },
+  {
+    "type": "review",
+    "pose": "work",
+    "file": "svg/review-work.svg",
+    "accent": "#4D9EFF",
+    "description": "Derived referee announcing the score with the free arm extended, retaining the raised 10 card, headband and striped shirt."
+  },
+  {
+    "type": "status",
+    "pose": "idle",
+    "file": "svg/status-idle.svg",
+    "accent": "#00ED95",
+    "description": "Bun-haired gymnast in a leotard, arms outstretched horizontally and ankles together on a balance beam; nine-athlete idle concept."
+  },
+  {
+    "type": "status",
+    "pose": "work",
+    "file": "svg/status-work.svg",
+    "accent": "#FFFFFF",
+    "description": "Bun-haired gymnast balancing on one leg with the other extended to the side, arms horizontal and small balance ticks; action-four STATUS concept."
+  },
+  {
+    "type": "workflow",
+    "pose": "idle",
+    "file": "svg/workflow-idle.svg",
+    "accent": "#FFFFFF",
+    "description": "Relay runner holding a baton upright with one bent arm; scoop-neck singlet, shorts, knee details and lace-up trainers; nine-athlete idle concept."
+  },
+  {
+    "type": "workflow",
+    "pose": "work",
+    "file": "svg/workflow-work.svg",
+    "accent": "#FFFFFF",
+    "description": "Derived relay stride with baton reaching forward for a handoff; retains idle hair, scoop-neck singlet, shorts and trainers."
+  },
+  {
+    "type": "other",
+    "pose": "idle",
+    "file": "svg/other-idle.svg",
+    "accent": "#FF3A5D",
+    "description": "Weightlifter holding a loaded bar overhead in a low bent-knee stance, with scoop-neck singlet and boots; nine-athlete idle concept."
+  },
+  {
+    "type": "other",
+    "pose": "work",
+    "file": "svg/other-work.svg",
+    "accent": "#FF3A5D",
+    "description": "Weightlifter pressing the loaded bar overhead in a wide straight-leg stance, headband, singlet, shorts and effort ticks; action-four OTHER concept."
+  }
+]
