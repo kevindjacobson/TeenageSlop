@@ -286,8 +286,9 @@ export const register: Register = on => {
     if (ran.deny === undefined && ran.isError) {
       await say($, `✕ ${e.tool} failed`)
     }
-    // back to thinking between calls; the next call sets a tool again
-    await setGuy($, byAgent(e.agentId), g => ({ ...g, tool: undefined }))
+    // back to thinking between calls; the next call sets a tool again. A permission
+    // prompt raised during the call has been answered by now, so the wait is over.
+    await setGuy($, byAgent(e.agentId), g => ({ ...g, tool: undefined, isWaiting: false, job: g.isWaiting ? 'working' : g.job }))
     return ran
   })
 

@@ -5,9 +5,11 @@ import { AVATARS } from './avatars'
 import { BLACK as BLACK_INK, BLUE, Canvas, DIM, GREEN, GREY, ORANGE, RED, WHITE } from './pixels'
 import type { Rgb } from './pixels'
 
-// one terminal cell, in pixels; the terminal scales the picture to its cells
+// one terminal cell, in logical pixels; the terminal scales the picture to its cells
 export const CELL_W = 8
 export const CELL_H = 16
+// pictures are drawn at twice that, so one-pixel strokes land under a device pixel
+const ZOOM = 2
 
 // while true every picture draws its calibration frame
 export const CALIBRATE = false
@@ -28,7 +30,7 @@ const shortModel = (model: string) => {
 export type ClockState = { isActive: boolean; elapsedMs: number; turns: number }
 
 export const drawClock = (columns: number, rows: number, s: ClockState) => {
-  const c = new Canvas(columns * CELL_W, rows * CELL_H)
+  const c = new Canvas(columns * CELL_W, rows * CELL_H, ZOOM)
   const H = c.height
   const midY = H / 2
 
@@ -50,7 +52,7 @@ export const drawClock = (columns: number, rows: number, s: ClockState) => {
 export type MachineState = { model: string; mode: string; ctxPercent: number }
 
 export const drawMachine = (columns: number, rows: number, s: MachineState) => {
-  const c = new Canvas(columns * CELL_W, rows * CELL_H)
+  const c = new Canvas(columns * CELL_W, rows * CELL_H, ZOOM)
   const H = c.height
   const midY = H / 2
 
@@ -95,12 +97,8 @@ export const kindOf = (subagentType: string): string => {
 
 // a stroke-font athlete from avatars.ts, scaled into its box; poses the athlete
 // lacks fall back to idle with a mark drawn over it
-// drawn at twice the cell resolution so a one-pixel stroke lands under a
-// device pixel once the terminal scales the picture down
-const FIGURE_SCALE = 2
-
 export const drawFigure = (columns: number, rows: number, color: Rgb, pose: Pose, frame: number, kind = 'other') => {
-  const c = new Canvas(columns * CELL_W * FIGURE_SCALE, rows * CELL_H * FIGURE_SCALE)
+  const c = new Canvas(columns * CELL_W, rows * CELL_H, ZOOM)
   const set = AVATARS[kind] ?? AVATARS['other'] ?? {}
   const strokes = set[pose] ?? set['idle'] ?? []
   const hasPose = set[pose] !== undefined
@@ -136,7 +134,7 @@ export const drawFigure = (columns: number, rows: number, color: Rgb, pose: Pose
     for (let i = 0; i < 3; i++) if ((frame + i) % 2 === 0) c.line(X(4), Y(30 + i * 6), X(10), Y(30 + i * 6), color, 1)
   }
 
-  if (CALIBRATE) c.calibrate(CELL_W * FIGURE_SCALE, CELL_H * FIGURE_SCALE)
+  if (CALIBRATE) c.calibrate(CELL_W, CELL_H)
   return c.source()
 }
 
@@ -156,7 +154,7 @@ export const gaugeLayout = (columns: number, count: number) => {
 }
 
 export const drawDial = (columns: number, d: Dial, peak: number) => {
-  const c = new Canvas(columns * CELL_W, DIAL_ROWS * CELL_H)
+  const c = new Canvas(columns * CELL_W, DIAL_ROWS * CELL_H, ZOOM)
   const r = Math.min(34, Math.max(18, c.width * 0.2))
   const ns = r >= 30 ? 6 : 5
   const cx = r + 8 // the arc's left edge sits on the picture's
@@ -168,8 +166,8 @@ export const drawDial = (columns: number, d: Dial, peak: number) => {
     c.line(cx + Math.cos(a) * (r + 3), py + Math.sin(a) * (r + 3), cx + Math.cos(a) * (r + 7), py + Math.sin(a) * (r + 7), GREY, 1)
   }
   const a = ((200 + 140 * Math.min(1, d.value / Math.max(1, peak))) * Math.PI) / 180
-  c.line(cx, py, cx + Math.cos(a) * (r - 4), py + Math.sin(a) * (r - 4), d.color)
-  c.disc(cx, py, 3, d.color)
+  c.line(cx, py, cx + Math.cos(a) * (r - 4), py + Math.sin(a) * (r - 4), d.color, 2)
+  c.disc(cx, py, 2, d.color)
 
   const n = String(d.value).padStart(2, '0')
   c.text(cx - Canvas.textWidth(n, ns) / 2, py + 12, n, d.color, ns)
@@ -182,7 +180,7 @@ export const drawDial = (columns: number, d: Dial, peak: number) => {
 
 // a section title: tiny caps and a rule to the right edge
 export const drawTitle = (columns: number, label: string) => {
-  const c = new Canvas(columns * CELL_W, CELL_H)
+  const c = new Canvas(columns * CELL_W, CELL_H, ZOOM)
   const w = c.text(0, 4, label, GREY, 2)
   c.line(w + 8, 8, c.width - 1, 8, DIM, 1)
   return c.source()
@@ -193,7 +191,7 @@ export const WORK_ROWS = 2
 export type WorkChips = { branch: string; worktree: string; isPlanning: boolean }
 
 export const drawWork = (columns: number, w: WorkChips) => {
-  const c = new Canvas(columns * CELL_W, WORK_ROWS * CELL_H)
+  const c = new Canvas(columns * CELL_W, WORK_ROWS * CELL_H, ZOOM)
   let x = 0
   const chip = (label: string, color: Rgb, isSolid = false) => {
     const text = label.toUpperCase().slice(0, 28)
@@ -215,7 +213,7 @@ export type TaskDot = { status: 'pending' | 'in_progress' | 'completed' }
 // TASKS: a progress line with a node per task, the live one blinking
 export const TASK_ROWS = 2
 export const drawTasks = (columns: number, tasks: TaskDot[], frame: number) => {
-  const c = new Canvas(columns * CELL_W, TASK_ROWS * CELL_H)
+  const c = new Canvas(columns * CELL_W, TASK_ROWS * CELL_H, 1.5)
   const done = tasks.filter(t => t.status === 'completed').length
   const label = `${done}/${tasks.length}`
   const lw = c.text(0, 10, label, WHITE, 3) + 14
@@ -228,7 +226,7 @@ export const drawTasks = (columns: number, tasks: TaskDot[], frame: number) => {
   c.line(lw, y, lw + gap * (tasks.length - 1), y, GREY)
   tasks.forEach((t, i) => {
     const x = lw + gap * i
-    if (t.status === 'completed') c.disc(x, y, 5, GREEN)
+    if (t.status === 'completed') c.disc(x, y, 4, GREEN)
     else if (t.status === 'in_progress') {
       c.circle(x, y, 6, ORANGE)
       if (frame % 2 === 0) c.disc(x, y, 3, ORANGE)
