@@ -229,8 +229,16 @@ export const register: Register = on => {
       }
       return next(e)
     }
+    // a prompt counts a turn; the engine's own turn.start says when work begins
+    await update($, turn, t => ({ ...t, count: t.count + 1 }))
+    return next(e)
+  })
+
+  // the main loop's turn: the clock runs and the lead works from here to turn.complete
+  on('turn.start', async ($, e, next) => {
+    if (e.agentId !== undefined) return next(e)
     const now = await $.clock.now()
-    await update($, turn, t => ({ isActive: true, startedAt: now, elapsed: 0, count: t.count + 1 }))
+    await update($, turn, t => ({ ...t, isActive: true, startedAt: now, elapsed: 0 }))
     // finished helpers go home when a new turn starts
     await update($, crew, list =>
       list
