@@ -280,6 +280,8 @@ export const register: Register = on => {
   })
 
   on('tool.call', async ($, e, next) => {
+    // the mod's own calls (the TaskList sync at start) are not the crew at work
+    if (next.origin.plugin === $.plugin.name) return next(e)
     const channel = channelOf(e.tool)
     await update($, meters, m => ({ ...m, [channel]: (m[channel] ?? 0) + 1 }))
     await setGuy($, byAgent(e.agentId), g => ({ ...g, isBusy: true, isWaiting: false, tool: e.tool, job: g.id === 'lead' ? 'working' : g.job }))
