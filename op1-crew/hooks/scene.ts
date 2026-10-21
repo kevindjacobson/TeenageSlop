@@ -114,7 +114,8 @@ export const drawFigure = (columns: number, rows: number, color: Rgb, pose: Pose
   const Y = (y: number) => y * k + bob
 
   for (const stroke of strokes) {
-    const col = stroke.c ? parseInt(stroke.c.replace('#', ''), 16) : color
+    // a white accent (dots, marks, motion lines) takes the figure's own colour; props keep theirs
+    const col = stroke.c && stroke.c.toUpperCase() !== '#FFFFFF' ? parseInt(stroke.c.replace('#', ''), 16) : color
     for (let i = 2; i < stroke.p.length; i += 2) {
       c.line(X(stroke.p[i - 2]!), Y(stroke.p[i - 1]!), X(stroke.p[i]!), Y(stroke.p[i + 1]!), col, t)
     }
@@ -129,7 +130,7 @@ export const drawFigure = (columns: number, rows: number, color: Rgb, pose: Pose
   if (!hasPose && pose === 'fail') c.text(X(50), Y(2), 'X', RED, Math.max(1, Math.round(k * 0.6)))
   if (pose === 'work') {
     // motion dashes trailing the athlete
-    for (let i = 0; i < 3; i++) if ((frame + i) % 2 === 0) c.line(X(4), Y(30 + i * 6), X(10), Y(30 + i * 6), GREY, 1)
+    for (let i = 0; i < 3; i++) if ((frame + i) % 2 === 0) c.line(X(4), Y(30 + i * 6), X(10), Y(30 + i * 6), color, 1)
   }
 
   if (CALIBRATE) c.calibrate(CELL_W * FIGURE_SCALE, CELL_H * FIGURE_SCALE)
