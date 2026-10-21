@@ -6,7 +6,11 @@
 // in pixels, so a drawing zoomed 2x keeps one-pixel lines that land under a
 // device pixel once the terminal scales the picture into its cells.
 
+import { encodePng } from './png'
+
 export type Rgb = number // 0xRRGGBB
+
+export type Picture = { png: string }
 
 // the OP-1 firmware's own colours, as read from its display SVGs
 export const BLACK = 0x000000
@@ -231,6 +235,11 @@ export class Canvas {
     this.px(this.pw - 1, 0, PIN)
     this.px(0, this.ph - 1, PIN)
     this.px(this.pw - 1, this.ph - 1, PIN)
-    return { rgba: base64(this.data), width: this.pw, height: this.ph }
+    return { png: base64(encodePng(this.pw, this.ph, this.data)) }
+  }
+
+  // the raw pixels, for a test or a tool
+  rgba() {
+    return this.data
   }
 }

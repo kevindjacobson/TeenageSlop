@@ -210,30 +210,12 @@ export const drawWork = (columns: number, w: WorkChips) => {
 
 export type TaskDot = { status: 'pending' | 'in_progress' | 'completed' }
 
-// TASKS: a progress line with a node per task, the live one blinking
+// TASKS: the count, big; the node line is text beside it
 export const TASK_ROWS = 2
-export const drawTasks = (columns: number, tasks: TaskDot[], frame: number) => {
-  const c = new Canvas(columns * CELL_W, TASK_ROWS * CELL_H, 1.5)
+export const drawTasks = (columns: number, tasks: TaskDot[]) => {
+  const c = new Canvas(columns * CELL_W, TASK_ROWS * CELL_H, ZOOM)
   const done = tasks.filter(t => t.status === 'completed').length
-  const label = `${done}/${tasks.length}`
-  const lw = c.text(0, 10, label, WHITE, 3) + 14
-  const y = 20
-  if (tasks.length === 0) {
-    c.line(lw, y, c.width - 6, y, DIM)
-    return c.source()
-  }
-  const gap = Math.max(8, (c.width - 10 - lw) / tasks.length)
-  c.line(lw, y, lw + gap * (tasks.length - 1), y, GREY)
-  tasks.forEach((t, i) => {
-    const x = lw + gap * i
-    if (t.status === 'completed') c.disc(x, y, 4, GREEN)
-    else if (t.status === 'in_progress') {
-      c.circle(x, y, 6, ORANGE)
-      if (frame % 2 === 0) c.disc(x, y, 3, ORANGE)
-    } else {
-      c.circle(x, y, 4, GREY, 1)
-    }
-  })
+  c.text(0, 8, `${done}/${tasks.length}`, WHITE, 3)
   if (CALIBRATE) c.calibrate(CELL_W, CELL_H)
   return c.source()
 }

@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { Register, StateDollar } from 'claude-code'
 
 import { BLUE, GREEN, GREY, ORANGE, WHITE } from './pixels'
+import type { Picture } from './pixels'
 import { DIAL_ROWS, TASK_ROWS, WORK_ROWS, drawClock, drawDial, drawFigure, drawMachine, drawTasks, drawTitle, drawWork, gaugeLayout, kindOf } from './scene'
 import type { Pose } from './scene'
 import type { Guy, Machine, Shell, Track, Turn, Work } from '../types'
@@ -10,6 +11,8 @@ const PANE = 'op1-crew'
 const TITLE = 'OP-1 · CREW'
 const CREW_COLORS = [GREEN, WHITE, ORANGE, BLUE]
 const HEADER_ROWS = 4
+const TITLE_COLS = 9
+const TASKS_COLS = 8
 const CLOCK_COLS = 30
 const MACHINE_COLS = 22
 const LEAD_COLS = 14
@@ -88,8 +91,8 @@ const poseOf = (g: Guy): Pose =>
   g.isFailed ? 'fail' : g.isWaiting ? 'wait' : g.isDone ? 'done' : g.isBusy ? (g.tool ? 'work' : 'think') : 'idle'
 
 // each picture is drawn once per distinct input: drawing and shipping pixels is the costly part
-const pictures = new Map<string, { rgba: string; width: number; height: number }>()
-const memo = (key: string, draw: () => { rgba: string; width: number; height: number }) => {
+const pictures = new Map<string, Picture>()
+const memo = (key: string, draw: () => Picture) => {
   const hit = pictures.get(key)
   if (hit) return hit
   if (pictures.size > 256) pictures.clear()
@@ -416,14 +419,18 @@ export const register: Register = on => {
     const dial = (d: (typeof dials)[number]) =>
       memo(`dial:${dialColumns}:${d.label}:${d.value}:${peak}:${d.color}`, () => drawDial(dialColumns, d, peak))
     const title = (label: string) => (
-      <Box flexDirection="column" marginTop={1}>
-        <Image key={`title-${label}`} source={memo(`title:${width}:${label}`, () => drawTitle(width, label))} columns={width} rows={1} alt={label} />
+      <Box flexDirection="row" marginTop={1}>
+        <Image key={`title-${label}`} source={memo(`title:${label}`, () => drawTitle(TITLE_COLS, label))} columns={TITLE_COLS} rows={1} alt={label} />
+        <Text color="#2a2b2d">{'─'.repeat(Math.max(0, width - TITLE_COLS))}</Text>
       </Box>
     )
     const workCols = Math.min(width, 60)
     const workPic = memo(`work:${workCols}:${w.branch}:${w.worktree}:${w.isPlanning}`, () => drawWork(workCols, w))
     const blink = list.some(x => x.status === 'in_progress') ? f % 2 : 0
-    const taskLine = memo(`tasks:${width}:${list.map(x => x.status[0]).join('')}:${blink}`, () => drawTasks(width, list, blink))
+    const taskLine = memo(`tasks:${done}/${list.length}`, () => drawTasks(TASKS_COLS, list))
+    const nodes = list
+      .map(x => (x.status === 'completed' ? '●' : x.status === 'in_progress' ? (blink ? '◉' : '○') : '○'))
+      .join('─')
 
     return (
       <Box flexDirection="column" width={width} minHeight={bodyRows} backgroundColor="#000000">
@@ -470,7 +477,12 @@ export const register: Register = on => {
           </Text>
         )}
         {title('TASKS')}
-        <Image key="tasks" source={taskLine} columns={width} rows={TASK_ROWS} alt={`tasks ${done}/${list.length}`} />
+        <Box flexDirection="row">
+          <Image key="tasks" source={taskLine} columns={TASKS_COLS} rows={TASK_ROWS} alt={`tasks ${done}/${list.length}`} />
+          <Box paddingTop={1}>
+            <Text color="#6f7173">{list.length === 0 ? 'no tasks' : short(nodes, width - TASKS_COLS - 1)}</Text>
+          </Box>
+        </Box>
         {list.slice(-10).map(x => (
           <Text key={`t${x.id}`} color={x.status === 'completed' ? '#6f7173' : x.status === 'in_progress' ? '#ff3a5d' : '#ffffff'}>
             {x.status === 'completed' ? '●' : x.status === 'in_progress' ? (f % 2 ? '◉' : '○') : '○'} {short(x.text, width - 2)}
