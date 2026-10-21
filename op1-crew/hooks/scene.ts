@@ -108,16 +108,19 @@ export const drawFigure = (columns: number, rows: number, color: Rgb, pose: Pose
   const k = Math.min(c.width, c.height) / 64
   const t = 1
   const ox = (c.width - 64 * k) / 2
-  // a small bob while working or thinking, so a still pose still breathes
-  const bob = pose === 'work' || pose === 'think' ? (frame % 2) * k : 0
   const X = (x: number) => ox + x * k
-  const Y = (y: number) => y * k + bob
+  const Y = (y: number) => y * k
 
+  // the body stands still; while thinking, the ellipsis (the white-accent
+  // marks of that pose) ripples upward, one dot at a time
+  let mark = 0
   for (const stroke of strokes) {
+    const isMark = stroke.c !== null && stroke.c.toUpperCase() === '#FFFFFF'
     // a white accent (dots, marks, motion lines) takes the figure's own colour; props keep theirs
-    const col = stroke.c && stroke.c.toUpperCase() !== '#FFFFFF' ? parseInt(stroke.c.replace('#', ''), 16) : color
+    const col = stroke.c && !isMark ? parseInt(stroke.c.replace('#', ''), 16) : color
+    const lift = isMark && pose === 'think' ? ((frame + mark++) % 3 === 0 ? -k * 1.5 : 0) : 0
     for (let i = 2; i < stroke.p.length; i += 2) {
-      c.line(X(stroke.p[i - 2]!), Y(stroke.p[i - 1]!), X(stroke.p[i]!), Y(stroke.p[i + 1]!), col, t)
+      c.line(X(stroke.p[i - 2]!), Y(stroke.p[i - 1]!) + lift, X(stroke.p[i]!), Y(stroke.p[i + 1]!) + lift, col, t)
     }
   }
 
