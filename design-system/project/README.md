@@ -52,7 +52,7 @@ Each zone opens with a `Title`: the word in `label` `grey`, then a `dim` rule to
 ### Gauges and ladders
 
 - A `Dial` is a 140 degree arc from 200 to 340 degrees with five ticks, a `stroke-bold` needle in the channel's colour, the reading in `dial-number` under the pivot and the label in `label` `grey` under that. Needles scale to the busiest channel, so the fullest dial always points right.
-- The `Ladder` is vertical, `ladder-w` wide, pips `ladder-seg` tall at `ladder-pitch`, under a `label` caption in `grey` and the rounded value in `white`. Lit pips are `green`; the last two pips are `red` when lit, whatever the percent. Unlit pips are `dim`.
+- The `Ladder` is vertical, `ladder-w` wide, pips `ladder-seg` tall at `ladder-pitch`, under a `label` caption in `grey` and the rounded value in `white`. Lit pips are `green`; from 60% the top lit pip is `white` as a warning; the last two pips are `red` when lit, whatever the percent. Unlit pips are `dim`.
 
 ### Motion
 
