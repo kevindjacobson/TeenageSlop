@@ -4,7 +4,19 @@ What to add to the mod next, each item sized for one agent in a parallel batch. 
 
 Every item: a hook in `register.tsx`, a state atom if new, a draw function in `scene.ts` where a picture is needed, a test in `register.test.tsx`, and `CLAUDE.md` updated if it adds a rule. Keep the vocabulary rule: labels are Claude Code's words.
 
-## 0. Done this session (uncommitted)
+## Status (2026-10-22, evening)
+
+Built, each on its own branch in a worktree, stacked in order; merge `feat/stream-poses` to take all three:
+
+| Item | Branch | Worktree |
+| --- | --- | --- |
+| 1 Rate-limit ladders (with the value and the warning-stage rule) | `feat/rate-limit-ladders` | `/Users/kj/Code/op1-crew-wt/ladders` |
+| 2 RUN zone, crowd rule, pressable names | `feat/run-zone` | `/Users/kj/Code/op1-crew-wt/run` |
+| 3 Poses from the stream, STEP row | `feat/stream-poses` | `/Users/kj/Code/op1-crew-wt/stream` |
+
+The engine's generated types under `op1-crew/.claude-plugin/types/` are git-ignored; copy them from the main checkout into a new worktree before `tsc`.
+
+## 0. Done on main
 
 - Workflow agents keyed by `workflow.runId#agentIndex` on `agent.spawn`, so a run's figures no longer share the Workflow call's tool_use_id.
 - `Workflow` counted on the AGENT gauge.
