@@ -14,7 +14,7 @@ The side pane of Claude Code drawn in the Teenage Engineering OP-1 display langu
 - `ground` is the only background. Pin the four corners of every canvas in `corner` so the terminal does not trim and recentre the picture.
 - The palette is the OP-1 firmware's: `blue`, `green`, `white`, `red`, `grey`, `dim`. `orange` is an alias of `red`, because the firmware's fourth encoder colour is that same value. Add no hue.
 - Dim is a darker shade, never opacity. The rasterizer writes RGBA with no blending, so an unlit segment is `dim`, not `green` at 20%.
-- Colour carries state. `green` means alive and fine (a live timer, a branch, done). `red` means failed, interrupted, bypassing permissions, or the top of a ladder. `white` is what is running now. `grey` is everything resting.
+- Colour carries state. `green` means alive and fine (a live timer, a branch, done). `red` means failed, interrupted, bypassing permissions, or the last two pips of a ladder. `white` is what is running now. `grey` is everything resting.
 - Figures take one body colour each from `blue`, `green`, `white`, `red` in join order; the lead is always `blue`. A `white` stroke inside a figure SVG means the figure's own colour; a prop keeps its own colour.
 - `grey` reads 4.1:1 on `ground`. Keep it to `label` size and larger and to secondary text. Anything the person must read now is `white`.
 
@@ -52,7 +52,7 @@ Each zone opens with a `Title`: the word in `label` `grey`, then a `dim` rule to
 ### Gauges and ladders
 
 - A `Dial` is a 140 degree arc from 200 to 340 degrees with five ticks, a `stroke-bold` needle in the channel's colour, the reading in `dial-number` under the pivot and the label in `label` `grey` under that. Needles scale to the busiest channel, so the fullest dial always points right.
-- The `Ladder` is vertical, `ladder-w` wide, segments `ladder-seg` tall at `ladder-pitch`. Lit segments are `green` to 60%, `orange` to 85%, `red` above. Unlit are `dim`. Its caption sits above it in `label`.
+- The `Ladder` is vertical, `ladder-w` wide, pips `ladder-seg` tall at `ladder-pitch`, under a `label` caption in `grey` and the rounded value in `white`. Lit pips are `green`; the last two pips are `red` when lit, whatever the percent. Unlit pips are `dim`.
 
 ### Motion
 
