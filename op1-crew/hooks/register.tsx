@@ -31,6 +31,10 @@ const shells = atom({ plugin: 'op1-crew', key: 'shells' } as const, [])
 const work = atom({ plugin: 'op1-crew', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
 const runs = atom({ plugin: 'op1-crew', key: 'runs' } as const, [] as Run[])
 
+// the shapes newer fields take when an older version's state comes back from the store
+const withTurnDefaults = (t: Partial<Turn>): Turn => ({ isActive: false, startedAt: 0, elapsed: 0, count: 0, step: 0, stepModel: '', phase: '', stopReason: '', outTokens: 0, ...t })
+const withMachineDefaults = (m: Partial<Machine>): Machine => ({ model: '', mode: '', ctxPercent: 0, limits: [], ...m })
+
 // the crew shows at most this many figures; past it, helpers collapse to one figure per kind
 const MAX_FIGURES = 9
 // a run id reads as its first four characters after wf_
@@ -135,6 +139,8 @@ export const register: Register = on => {
       return unique.some(g => g.id === 'lead') ? unique : [LEAD, ...unique]
     })
     await update($, ticker, () => [])
+    await update($, turn, t => withTurnDefaults(t))
+    await update($, machine, m => withMachineDefaults(m))
     const [model, count] = await Promise.all([$.session.model(), $.session.turns()])
     await update($, machine, m => ({ ...m, model }))
     await update($, turn, t => ({ ...t, count }))
@@ -297,7 +303,7 @@ export const register: Register = on => {
         const out = chunk.usage?.output_tokens ?? 0
         const model = chunk.usage?.model
         const stopReason = String(chunk.stopReason ?? '')
-        await update($, turn, t => ({ ...t, stopReason, outTokens: t.outTokens + out, stepModel: model || t.stepModel }))
+        await update($, turn, t => ({ ...withTurnDefaults(t), stopReason, outTokens: (t.outTokens ?? 0) + out, stepModel: model || t.stepModel }))
       }
       yield chunk
     }
@@ -449,9 +455,12 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const [guys, list, levels, lines, f, t, m, w, shellRows, runList] = await Promise.all([
+    const [guys, list, levels, lines, f, t0, m0, w, shellRows, runList] = await Promise.all([
       read($, crew), read($, tracks), read($, meters), read($, ticker), read($, frame), read($, turn), read($, machine), read($, work), read($, shells), read($, runs),
     ])
+    // state outlives a reload: entries an earlier version wrote may lack newer fields
+    const t = withTurnDefaults(t0)
+    const m = withMachineDefaults(m0)
     const now = t.startedAt + t.elapsed
     const mmss = (ms: number) => {
       const s = Math.max(0, Math.floor(ms / 1000))
