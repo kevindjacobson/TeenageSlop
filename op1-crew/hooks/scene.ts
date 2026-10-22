@@ -49,25 +49,37 @@ export const drawClock = (columns: number, rows: number, s: ClockState) => {
 }
 
 // TURN, right: model and mode chips, the context ladder; changes rarely
-export type MachineState = { model: string; mode: string; ctxPercent: number }
+export type MachineState = { model: string; mode: string; ctxPercent: number; limits: { label: string; percent: number }[] }
 
 export const drawMachine = (columns: number, rows: number, s: MachineState) => {
   const c = new Canvas(columns * CELL_W, rows * CELL_H, ZOOM)
   const H = c.height
   const midY = H / 2
 
+  // ladders, flush right: the rate-limit windows outermost, CTX nearest the chips.
+  // Each is a caption, its value, then pips lit from the bottom. Pips are green;
+  // from 60% the top lit pip is white as a warning; the last two pips of any
+  // ladder are red when lit (the design system's Ladder rule)
   const ladderW = 10
+  const top = 24 // caption and value above
+  const segs = Math.max(4, Math.floor((H - top - 4) / 5))
   let right = c.width - 1
-  c.text(right - Canvas.textWidth('CTX', 2), 2, 'CTX', GREY, 2)
-  const segs = Math.max(4, Math.floor((H - 12) / 5))
-  const lit = Math.round((s.ctxPercent / 100) * segs)
-  for (let i = 0; i < segs; i++) {
-    const y = H - 4 - i * 5
-    const on = i < lit
-    const col = i >= segs * 0.85 ? RED : i >= segs * 0.6 ? ORANGE : GREEN
-    c.fill(right - ladderW, y - 3, ladderW, 3, on ? col : DIM)
+  const ladder = (label: string, percent: number) => {
+    const value = String(Math.round(percent))
+    const w = Math.max(ladderW, Canvas.textWidth(label, 2), Canvas.textWidth(value, 2))
+    c.text(right - Canvas.textWidth(label, 2), 2, label, GREY, 2)
+    c.text(right - Canvas.textWidth(value, 2), 13, value, WHITE, 2)
+    const lit = Math.round((percent / 100) * segs)
+    const pip = (i: number) => (i >= segs - 2 ? RED : i === lit - 1 && percent >= 60 ? WHITE : GREEN)
+    for (let i = 0; i < segs; i++) {
+      const y = H - 4 - i * 5
+      c.fill(right - ladderW, y - 3, ladderW, 3, i < lit ? pip(i) : DIM)
+    }
+    right -= w + 8
   }
-  right -= ladderW + 14
+  for (const l of [...s.limits].reverse()) ladder(l.label, l.percent)
+  ladder('CTX', s.ctxPercent)
+  right -= 6
 
   const chip = (label: string, color: Rgb, y: number) => {
     const w = Canvas.textWidth(label, 2) + 10
