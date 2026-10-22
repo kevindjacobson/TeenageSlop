@@ -17,7 +17,18 @@ export type Guy = {
 
 export type Track = { id: string; text: string; status: 'pending' | 'in_progress' | 'completed' }
 
-export type Turn = { isActive: boolean; startedAt: number; elapsed: number; count: number }
+// step: the model request inside the turn, from 1; phase: what the stream is delivering now
+export type Turn = {
+  isActive: boolean
+  startedAt: number
+  elapsed: number
+  count: number
+  step: number
+  stepModel: string
+  phase: '' | 'thinking' | 'text' | 'tool'
+  stopReason: string
+  outTokens: number
+}
 
 export type Limit = { label: string; percent: number }
 // limits: the rate-limit windows the last response reported (5H, 7D), empty off a subscription
