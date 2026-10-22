@@ -56,20 +56,23 @@ export const drawMachine = (columns: number, rows: number, s: MachineState) => {
   const H = c.height
   const midY = H / 2
 
-  // ladders, flush right: the rate-limit windows outermost, CTX nearest the chips,
-  // all at one pitch and one colour scale, each as wide as its caption needs
+  // ladders, flush right: the rate-limit windows outermost, CTX nearest the chips.
+  // Each is a caption, its value, then pips lit from the bottom; the last two
+  // pips of any ladder are red when lit (a rule by position, from the design system)
   const ladderW = 10
-  const segs = Math.max(4, Math.floor((H - 12) / 5))
+  const top = 24 // caption and value above
+  const segs = Math.max(4, Math.floor((H - top - 4) / 5))
   let right = c.width - 1
   const ladder = (label: string, percent: number) => {
-    const w = Math.max(ladderW, Canvas.textWidth(label, 2))
+    const value = String(Math.round(percent))
+    const w = Math.max(ladderW, Canvas.textWidth(label, 2), Canvas.textWidth(value, 2))
     c.text(right - Canvas.textWidth(label, 2), 2, label, GREY, 2)
+    c.text(right - Canvas.textWidth(value, 2), 13, value, WHITE, 2)
     const lit = Math.round((percent / 100) * segs)
     for (let i = 0; i < segs; i++) {
       const y = H - 4 - i * 5
       const on = i < lit
-      const col = i >= segs * 0.85 ? RED : i >= segs * 0.6 ? ORANGE : GREEN
-      c.fill(right - ladderW, y - 3, ladderW, 3, on ? col : DIM)
+      c.fill(right - ladderW, y - 3, ladderW, 3, on ? (i >= segs - 2 ? RED : GREEN) : DIM)
     }
     right -= w + 8
   }
