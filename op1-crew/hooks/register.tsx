@@ -5,7 +5,7 @@ import { BLUE, GREEN, GREY, ORANGE, WHITE } from './pixels'
 import type { Picture } from './pixels'
 import { DIAL_ROWS, TASK_ROWS, WORK_ROWS, drawClock, drawDial, drawFigure, drawMachine, drawTasks, drawTitle, drawWork, gaugeLayout, kindOf } from './scene'
 import type { Pose } from './scene'
-import type { Guy, Machine, Shell, Track, Turn, Work } from '../types'
+import type { Limit, Guy, Machine, Shell, Track, Turn, Work } from '../types'
 
 const PANE = 'op1-crew'
 const TITLE = 'OP-1 · CREW'
@@ -15,6 +15,7 @@ const TITLE_COLS = 9
 const TASKS_COLS = 8
 const CLOCK_COLS = 30
 const MACHINE_COLS = 22
+const LIMIT_COLS = 4 // columns one rate-limit ladder adds to the machine picture
 const LEAD_COLS = 14
 const LEAD_ROWS = 7
 const GUY_ROWS = 7
@@ -25,7 +26,7 @@ const meters = atom({ plugin: 'op1-crew', key: 'meters' } as const, {})
 const ticker = atom({ plugin: 'op1-crew', key: 'ticker' } as const, [])
 const frame = atom({ plugin: 'op1-crew', key: 'frame' } as const, 0)
 const turn = atom({ plugin: 'op1-crew', key: 'turn' } as const, { isActive: false, startedAt: 0, elapsed: 0, count: 0 })
-const machine = atom({ plugin: 'op1-crew', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0 })
+const machine = atom({ plugin: 'op1-crew', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0, limits: [] as Limit[] })
 const shells = atom({ plugin: 'op1-crew', key: 'shells' } as const, [])
 const work = atom({ plugin: 'op1-crew', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
 
@@ -78,6 +79,9 @@ const CHANNELS: [string, RegExp][] = [
   ['SKILL', /^Skill$/],
   ['MCP', /^mcp__/],
 ]
+// the window names the engine reports, as two-character captions
+const limitLabel = (kind: string) => (kind === 'five_hour' ? '5H' : kind === 'seven_day' ? '7D' : kind.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 3))
+
 const channelOf = (tool: string) => CHANNELS.find(([, re]) => re.test(tool))?.[0] ?? 'OTHER'
 
 const asRgb = (c: unknown): number =>
@@ -260,9 +264,11 @@ export const register: Register = on => {
     return next(e)
   })
 
+  // the context fill and the rate-limit windows, pushed after each main-thread turn
   on('session.measure', async ($, e, next) => {
     const percent = e.context.percent
-    if (percent !== undefined) await update($, machine, m => ({ ...m, ctxPercent: percent }))
+    const limits = (e.rateLimits ?? []).map(l => ({ label: limitLabel(l.kind), percent: Math.round(l.percentUsed) }))
+    await update($, machine, m => ({ ...m, ctxPercent: percent ?? m.ctxPercent, limits }))
     return next(e)
   })
 
@@ -408,8 +414,13 @@ export const register: Register = on => {
     const seconds = Math.floor(t.elapsed / 1000)
     const clockPic = memo(`clock:${width}:${t.isActive}:${seconds}:${t.count}`, () =>
       drawClock(Math.min(CLOCK_COLS, width), HEADER_ROWS, { isActive: t.isActive, elapsedMs: seconds * 1000, turns: t.count }))
-    const machinePic = memo(`machine:${m.model}:${m.mode}:${m.ctxPercent}`, () =>
-      drawMachine(MACHINE_COLS, HEADER_ROWS, m))
+    // each window adds a ladder; on a pane too narrow for them the header keeps CTX alone
+    const machineCols = MACHINE_COLS + LIMIT_COLS * m.limits.length
+    const shown = width >= CLOCK_COLS + machineCols ? m : { ...m, limits: [] }
+    const shownCols = MACHINE_COLS + LIMIT_COLS * shown.limits.length
+    const limitsKey = shown.limits.map(l => `${l.label}=${l.percent}`).join(',')
+    const machinePic = memo(`machine:${shownCols}:${m.model}:${m.mode}:${m.ctxPercent}:${limitsKey}`, () =>
+      drawMachine(shownCols, HEADER_ROWS, shown))
     const figure = (cols: number, rows: number, g: Guy) => {
       const pose = poseOf(g)
       const step = f % CYCLE[pose]
@@ -444,7 +455,7 @@ export const register: Register = on => {
         <Box flexDirection="row" justifyContent="space-between">
           <Image key="clock" source={clockPic} columns={Math.min(CLOCK_COLS, width)} rows={HEADER_ROWS} alt={`turn ${t.count} ${t.isActive ? 'running' : 'idle'}`} />
           {width >= CLOCK_COLS + MACHINE_COLS && (
-            <Image key="machine" source={machinePic} columns={MACHINE_COLS} rows={HEADER_ROWS} alt={`${m.model} ${m.mode} ctx ${m.ctxPercent}%`} />
+            <Image key="machine" source={machinePic} columns={shownCols} rows={HEADER_ROWS} alt={[`${m.model} ${m.mode} ctx ${m.ctxPercent}%`, ...shown.limits.map(l => `${l.label} ${l.percent}%`)].join(' ')} />
           )}
         </Box>
 

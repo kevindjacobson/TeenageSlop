@@ -16,7 +16,9 @@ export type Track = { id: string; text: string; status: 'pending' | 'in_progress
 
 export type Turn = { isActive: boolean; startedAt: number; elapsed: number; count: number }
 
-export type Machine = { model: string; mode: string; ctxPercent: number }
+export type Limit = { label: string; percent: number }
+// limits: the rate-limit windows the last response reported (5H, 7D), empty off a subscription
+export type Machine = { model: string; mode: string; ctxPercent: number; limits: Limit[] }
 
 export type Shell = {
   id: string

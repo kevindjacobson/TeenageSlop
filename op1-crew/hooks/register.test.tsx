@@ -24,6 +24,7 @@ const boot = async ($: any, on: any) => {
   on('tool.call', () => ({ result: {} }))
   on('clock.every', () => ({ value: {} }))
   on('clock.now', () => ({ value: 1_700_000_000_000 }))
+  on('session.measure', (_: any, e: any) => ({ changed: e.changed }))
   on('session.cwd', () => ({ value: '/' }))
   on('session.root', () => ({ value: '/' }))
   on('process.run', () => ({ value: { exitCode: 1, stdout: '' } }))
@@ -78,5 +79,18 @@ test('a Workflow call lights the AGENT gauge', async ($, on) => {
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   expect((await ui.find({ type: 'Image', key: 'dial-AGENT' }))?.props.alt).toBe('AGENT 1')
+  await ui.unmount()
+})
+
+test('the rate-limit windows light ladders beside CTX', async ($, on) => {
+  await boot($, on)
+  await $.session.measure({
+    context: { window: 200000, percent: 62 },
+    rateLimits: [{ kind: 'five_hour', percentUsed: 38 }, { kind: 'seven_day', percentUsed: 91.5 }],
+    changed: ['context', 'rateLimits'],
+  } as any)
+
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 80 }, surface: 'terminal' })
+  expect((await ui.find({ type: 'Image', key: 'machine' }))?.props.alt).toMatch(/ctx 62% 5H 38% 7D 92%$/)
   await ui.unmount()
 })
