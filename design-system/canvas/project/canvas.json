@@ -1,0 +1,124 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Agents.dc.html": {
+      "h": 500,
+      "title": "7 · Agent badges",
+      "w": 640,
+      "x": 0,
+      "y": 2280
+    },
+    "Avatars.dc.html": {
+      "h": 640,
+      "title": "8 · Avatar sets",
+      "w": 1360,
+      "x": 720,
+      "y": 2280
+    },
+    "Check.dc.html": {
+      "h": 480,
+      "title": "4 · Permission verdicts",
+      "w": 640,
+      "x": 0,
+      "y": 1440
+    },
+    "Main.dc.html": {
+      "h": 1080,
+      "title": "Today: the pane as shipped",
+      "w": 640,
+      "x": 0,
+      "y": 0
+    },
+    "Measure.dc.html": {
+      "h": 360,
+      "title": "1 · Rate-limit ladders beside CTX",
+      "w": 640,
+      "x": 720,
+      "y": 0
+    },
+    "Recall.dc.html": {
+      "h": 420,
+      "title": "6 · Session recall",
+      "w": 640,
+      "x": 1440,
+      "y": 1440
+    },
+    "Refusal.dc.html": {
+      "h": 420,
+      "title": "5 · Refusal with a reason",
+      "w": 640,
+      "x": 720,
+      "y": 1440
+    },
+    "Run.dc.html": {
+      "h": 760,
+      "title": "2 · RUN zone for a workflow",
+      "w": 640,
+      "x": 1440,
+      "y": 0
+    },
+    "Stream.dc.html": {
+      "h": 600,
+      "title": "3 · Poses from the stream",
+      "w": 640,
+      "x": 2160,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-22T02:10:49Z",
+    "v": 1
+  },
+  "designSystems": [
+    {
+      "artifact": "https://claude.ai/artifact/2KVaPJNLnUWwrS5itjbArQ",
+      "copiedAt": "2026-10-22T02:10:49Z",
+      "namespace": "op1crew",
+      "title": "OP-1 Crew",
+      "version": "1792635503-767a"
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "row1": {
+      "kind": "title1",
+      "maxW": 2800,
+      "text": "Header and crew proposals",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 2800,
+      "text": "Signals and memory",
+      "w": 240,
+      "x": 0,
+      "y": 1200
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 2800,
+      "text": "Crew identity",
+      "w": 240,
+      "x": 0,
+      "y": 2040
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Measure.dc.html",
+    "Run.dc.html",
+    "Stream.dc.html",
+    "Check.dc.html",
+    "Refusal.dc.html",
+    "Recall.dc.html",
+    "Agents.dc.html",
+    "Avatars.dc.html"
+  ],
+  "pages": [],
+  "title": "OP-1 Crew Proposals"
+}

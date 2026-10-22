@@ -1,0 +1,1 @@
+The 22 athlete figures, one SVG per kind and pose, as the mod bakes them. Single-ink line art: the body is `currentColor`, so give the `<img>` a `color` from the palette (`blue` for the lead). Accents inside the files are `#4D9EFF`, `#00ED95`, `#FF3A5D` for props and `#FFFFFF` for marks that take the figure's colour. Preview on `ground`.

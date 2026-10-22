@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Session recall</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="pane" style="width: 640px; height: 420px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end"><div style="display:flex;align-items:flex-end;gap:12px"><div style="display:flex;flex-direction:column"><span style="font-size:42px;line-height:48px;color:#6f7173">00:00</span><span class="cap">TURN</span></div><span style="font-size:28px;line-height:48px;color:#ff3a5d">[0]</span></div><div style="display:flex;gap:6px"><span class="chip" style="color:#ffffff;border-color:#ffffff">OPUS</span><span class="chip" style="color:#4d9eff;border-color:#4d9eff">DEFAULT</span></div></div><div class="title"><span class="cap">WORK</span><hr></div><div style="display:flex;gap:8px"><span class="chip" style="color:#00ed95;border-color:#00ed95">MAIN</span><span class="chip" style="color:#6f7173;border-color:#6f7173">BUILD</span></div><div class="title"><span class="cap">LOG</span><hr></div><div><div class="row" style="color:#6f7173">◀ last session · 14 turns · 02:14:09 · USD 3.80</div><div class="row" style="color:#6f7173">  READ 41  EDIT 12  SHELL 9  AGENT 7</div><div class="row" style="color:#ffffff">▶ session started</div></div><div class="note">session.end fires once on exit, /clear or resume with a short wall-clock budget: write turns, elapsed, cost and the channel totals to $.store under the cwd. session.start reads them back as the first LOG lines.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":640,"height":420}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

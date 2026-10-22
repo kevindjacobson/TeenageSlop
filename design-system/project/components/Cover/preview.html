@@ -1,0 +1,51 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OP-1 Crew</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--ground); color:var(--white); font-family:var(--font-stroke); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; shape-rendering:crispEdges; }
+  .blue { fill:var(--blue); } .green { fill:var(--green); } .white { fill:var(--white); } .red { fill:var(--red); } .dim { fill:var(--dim); } .grey { fill:var(--grey); }
+  .words { position:absolute; left:16px; bottom:16px; max-width:440px; }
+  .name { margin:0; font-size:72px; line-height:.92; font-weight:400; color:var(--white); letter-spacing:-.01em; }
+  .tag { margin:8px 0 0 2px; font-size:14px; line-height:20px; color:var(--grey); letter-spacing:.04em; }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288">
+<!--
+  blocks      blue 112x288 bled off the top and bottom (the lead's colour, lead-w wide) · green 176x112 (machine-w by figure-h) · white 64x64 (figure-box) · red 64x16 once (chip-h: it only ever means fail) · dim 240x64 (clock-w by header-h) for relief
+  arrangement a flush modular grid on the 8x16 cell: the blue slab first, the green and dim fields stacked right of it, the white box and red chip on the cell grid below
+  pattern     ladder segments, from "The Ladder is vertical, ladder-w wide, segments ladder-seg tall at ladder-pitch": three ladders cut into the dim field in grey, lit from the bottom, pitch 5 x 4 = 20, segment 3 x 4 = 12, width ladder-w x 4 = 40
+  scales      every side a multiple of cell-w 8 and cell-h 16; radius-0 everywhere; stroke none, fills only
+-->
+<rect class="blue" x="0" y="0" width="112" height="288"/>
+<rect class="green" x="128" y="0" width="176" height="112"/>
+<rect class="dim" x="128" y="128" width="352" height="64"/>
+<rect class="white" x="320" y="0" width="64" height="64"/>
+<rect class="red" x="320" y="80" width="64" height="16"/>
+<rect class="white" x="128" y="208" width="64" height="64"/>
+<rect class="green" x="208" y="208" width="272" height="64"/>
+<g class="grey">
+<rect x="160" y="172" width="40" height="12"/><rect x="160" y="152" width="40" height="12"/>
+<rect x="240" y="172" width="40" height="12"/><rect x="240" y="152" width="40" height="12"/><rect x="240" y="132" width="40" height="12"/>
+<rect x="320" y="172" width="40" height="12"/>
+<rect x="400" y="172" width="40" height="12"/><rect x="400" y="152" width="40" height="12"/><rect x="400" y="132" width="40" height="12"/>
+</g>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">OP-1 Crew</h1>
+<p class="tag">A crew of little guys for the lead and each subagent.</p>
+</div>
+</div>
+</body>
+</html>
