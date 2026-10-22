@@ -2,6 +2,9 @@ export type Guy = {
   id: string
   kind: string
   agentId?: string
+  // a workflow run's agent: the run it belongs to and its place in the run's agent() calls
+  runId?: string
+  index?: number
   name: string
   color: number
   job: string
@@ -44,7 +47,11 @@ declare module 'claude-code' {
       turn: Turn
       machine: Machine
       work: Work
+      runs: Run[]
       shells: Shell[]
     }
   }
 }
+
+// a workflow run: opened by its first agent.spawn, counted by SubagentStop, ended when the Workflow call returns
+export type Run = { id: string; startedAt: number; spawned: number; done: number; endedAt?: number }

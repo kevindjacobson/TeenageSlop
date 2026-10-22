@@ -5,7 +5,7 @@ import { BLUE, GREEN, GREY, ORANGE, WHITE } from './pixels'
 import type { Picture } from './pixels'
 import { DIAL_ROWS, TASK_ROWS, WORK_ROWS, drawClock, drawDial, drawFigure, drawMachine, drawTasks, drawTitle, drawWork, gaugeLayout, kindOf } from './scene'
 import type { Pose } from './scene'
-import type { Limit, Guy, Machine, Shell, Track, Turn, Work } from '../types'
+import type { Limit, Guy, Machine, Run, Shell, Track, Turn, Work } from '../types'
 
 const PANE = 'op1-crew'
 const TITLE = 'OP-1 · CREW'
@@ -29,6 +29,12 @@ const turn = atom({ plugin: 'op1-crew', key: 'turn' } as const, { isActive: fals
 const machine = atom({ plugin: 'op1-crew', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0, limits: [] as Limit[] })
 const shells = atom({ plugin: 'op1-crew', key: 'shells' } as const, [])
 const work = atom({ plugin: 'op1-crew', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
+const runs = atom({ plugin: 'op1-crew', key: 'runs' } as const, [] as Run[])
+
+// the crew shows at most this many figures; past it, helpers collapse to one figure per kind
+const MAX_FIGURES = 9
+// a run id reads as its first four characters after wf_
+const runLabel = (id: string) => `WF_${id.replace(/^wf_/, '').slice(0, 4).toUpperCase()}`
 
 type WorkDollar = StateDollar & { process: { run: (argv: readonly string[], init?: { cwd?: string }) => Promise<{ exitCode: number; stdout: string }> }; session: { cwd: () => Promise<string>; root: () => Promise<string> } }
 
@@ -255,6 +261,7 @@ export const register: Register = on => {
         .filter(g => g.id === 'lead' || !g.isDone)
         .map(g => (g.id === 'lead' ? { ...g, isBusy: true, isWaiting: false, isFailed: false, job: 'thinking', tool: undefined } : g)),
     )
+    await update($, runs, all => all.filter(x => x.endedAt === undefined))
     await say($, '▶ turn started')
     return next(e)
   })
@@ -300,6 +307,12 @@ export const register: Register = on => {
     if (ran.deny === undefined && ran.isError) {
       await say($, `✕ ${e.tool} failed`)
     }
+    // the Workflow call returns once its script is done: its runs end, their figures stay until the next turn
+    if (e.tool === 'Workflow') {
+      const now = await $.clock.now()
+      await update($, runs, all => all.map(x => (x.endedAt === undefined ? { ...x, endedAt: now } : x)))
+      await say($, ran.isError ? '✕ run failed' : '■ run done')
+    }
     // back to thinking between calls; the next call sets a tool again. A permission
     // prompt raised during the call has been answered by now, so the wait is over.
     await setGuy($, byAgent(e.agentId), g => ({ ...g, tool: undefined, isWaiting: false, job: g.isWaiting ? 'working' : g.job }))
@@ -338,20 +351,33 @@ export const register: Register = on => {
   on('agent.spawn', async ($, e, next) => {
     const list = await read($, crew)
     // a workflow run's agents all share the Workflow call's tool_use_id: the agent index tells them apart
-    const id = e.workflow ? `${e.workflow.runId || e.tool_use_id}#${e.workflow.agentIndex}` : e.tool_use_id || `${list.length}`
+    const wf = e.workflow
+    const runId = wf ? wf.runId || e.tool_use_id : undefined
+    const id = wf ? `${runId}#${wf.agentIndex}` : e.tool_use_id || `${list.length}`
     const guy: Guy = {
       id,
-      kind: kindOf(e.subagentType || ''),
-      name: (e.subagentType || 'helper').toUpperCase(),
+      kind: wf ? 'workflow' : kindOf(e.subagentType || ''),
+      name: wf ? `${(e.subagentType || 'agent').toUpperCase().split('-')[0]!.slice(0, 8)}#${wf.agentIndex}` : (e.subagentType || 'helper').toUpperCase(),
       color: CREW_COLORS[list.length % CREW_COLORS.length] ?? WHITE,
       job: e.description,
       isBusy: true,
       isDone: false,
       isFailed: false,
       isWaiting: false,
+      ...(wf ? { runId, index: wf.agentIndex } : {}),
     }
-    await update($, crew, all => [...all, guy].slice(-9))
-    await say($, `+ ${guy.name} joins`)
+    await update($, crew, all => [...all, guy].slice(-64))
+    if (runId) {
+      const now = await $.clock.now()
+      await update($, runs, all =>
+        all.some(x => x.id === runId)
+          ? all.map(x => (x.id === runId ? { ...x, spawned: x.spawned + 1 } : x))
+          : [...all, { id: runId, startedAt: now, spawned: 1, done: 0 }],
+      )
+      if (!list.some(g => g.runId === runId)) await say($, `▶ run ${runLabel(runId)}`)
+    } else {
+      await say($, `+ ${guy.name} joins`)
+    }
 
     const ran = await next(e)
     if (ran.deny === undefined && ran.agentId) {
@@ -361,7 +387,9 @@ export const register: Register = on => {
   })
 
   on('classic.SubagentStop', async ($, e, next) => {
+    const stopped = (await read($, crew)).find(g => g.agentId === e.agent_id)
     await setGuy($, g => g.agentId === e.agent_id, g => ({ ...g, isBusy: false, isDone: true, tool: undefined }))
+    if (stopped?.runId) await update($, runs, all => all.map(x => (x.id === stopped.runId ? { ...x, done: x.done + 1 } : x)))
     return next(e)
   })
 
@@ -383,8 +411,8 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const [guys, list, levels, lines, f, t, m, w, shellRows] = await Promise.all([
-      read($, crew), read($, tracks), read($, meters), read($, ticker), read($, frame), read($, turn), read($, machine), read($, work), read($, shells),
+    const [guys, list, levels, lines, f, t, m, w, shellRows, runList] = await Promise.all([
+      read($, crew), read($, tracks), read($, meters), read($, ticker), read($, frame), read($, turn), read($, machine), read($, work), read($, shells), read($, runs),
     ])
     const now = t.startedAt + t.elapsed
     const mmss = (ms: number) => {
@@ -393,7 +421,22 @@ export const register: Register = on => {
     }
     const width = Math.max(24, e.props.bodyColumns ?? 40)
     const lead = guys.find(g => g.id === 'lead') ?? LEAD
-    const helpers = guys.filter(g => g.id !== 'lead')
+    const all = guys.filter(g => g.id !== 'lead')
+    // past MAX_FIGURES helpers: those needing the person stay on their own, the rest collapse to one figure per kind
+    const shownHelpers = (): Guy[] => {
+      if (all.length <= MAX_FIGURES) return all
+      const own = all.filter(g => g.isWaiting || g.isFailed)
+      const rest = all.filter(g => !g.isWaiting && !g.isFailed)
+      const byKind = new Map<string, Guy[]>()
+      for (const g of rest) byKind.set(g.kind, [...(byKind.get(g.kind) ?? []), g])
+      const groups = [...byKind.entries()].map(([kind, members]) => {
+        const lead = members.find(g => g.isBusy) ?? members[0]!
+        const busy = members.some(g => g.isBusy)
+        return { ...lead, id: `kind-${kind}`, name: `${kind.toUpperCase().slice(0, 8)} ×${members.length}`, isBusy: busy, isDone: !busy, tool: undefined }
+      })
+      return [...own, ...groups].slice(0, MAX_FIGURES)
+    }
+    const helpers = shownHelpers()
     const peak = Math.max(1, ...Object.values(levels))
     const dials = [...CHANNELS.map(([c]) => c), 'OTHER']
       .filter(c => levels[c])
@@ -410,7 +453,8 @@ export const register: Register = on => {
       )
     }
 
-    const { Box, Image, Text } = $.ui.resolve(e)
+    const { Box, Button, Image, Text } = $.ui.resolve(e)
+    const view = (agentId?: string) => () => void ($ as unknown as { ui: { view: (v: { agentId?: string }) => Promise<unknown> } }).ui.view(agentId ? { agentId } : {})
     const seconds = Math.floor(t.elapsed / 1000)
     const clockPic = memo(`clock:${width}:${t.isActive}:${seconds}:${t.count}`, () =>
       drawClock(Math.min(CLOCK_COLS, width), HEADER_ROWS, { isActive: t.isActive, elapsedMs: seconds * 1000, turns: t.count }))
@@ -427,6 +471,7 @@ export const register: Register = on => {
       return memo(`fig:${cols}:${rows}:${g.kind}:${g.color}:${pose}:${step}`, () => drawFigure(cols, rows, g.color, pose, step, g.kind))
     }
     const guyW = Math.min(18, Math.max(LEAD_COLS, ...helpers.map(g => g.name.length + 1)))
+    const hotkeyOf = (g: Guy) => { const i = helpers.indexOf(g) + 1; return i >= 1 && i <= 9 ? String(i) : undefined }
     const guyCols = Math.max(1, Math.floor((width - LEAD_COLS) / guyW))
     const bodyRows = e.props.scroll?.bodyRows ?? e.viewport?.rows ?? 40
     const guyRows: Guy[][] = []
@@ -470,7 +515,9 @@ export const register: Register = on => {
                 {row.map(g => (
                   <Box key={g.id} flexDirection="column" width={guyW}>
                     <Image key={`guy-${g.id}`} source={figure(guyW, GUY_ROWS, g)} columns={guyW} rows={GUY_ROWS} alt={`${g.name} ${poseOf(g)}`} />
-                    <Text color={hex(g.color)}>{short(g.name, guyW - 1)}</Text>
+                    <Button key={`view-${g.id}`} plain hotkey={hotkeyOf(g)} onPress={view(g.agentId)}>
+                      <Text color={hex(g.color)}>{short(g.name, guyW - 4)}</Text>
+                    </Button>
                   </Box>
                 ))}
               </Box>
@@ -478,15 +525,28 @@ export const register: Register = on => {
             {helpers.length === 0 && <Text color="#6f7173">no subagents</Text>}
           </Box>
         </Box>
-        <Text color="#6f7173">
-          <Text color="#4d9eff">LEAD</Text> {short(lead.tool ?? lead.job, width - 5)}
+        <Box flexDirection="row">
+          <Button key="view-lead" plain hotkey="0" onPress={view()}><Text color="#4d9eff">LEAD</Text></Button>
+          <Text color="#6f7173"> {short(lead.tool ?? lead.job, width - 8)}
         </Text>
+        </Box>
         {helpers.filter(g => !g.isDone).map(g => (
           <Text key={`job-${g.id}`} color="#6f7173">
             <Text color={hex(g.color)}>{g.name}</Text> {short(g.job, width - g.name.length - 1)}
           </Text>
         ))}
 
+        {runList.length > 0 && title('RUN')}
+        {runList.map(x => {
+          const mine = guys.filter(g => g.runId === x.id)
+          const need = mine.filter(g => g.isWaiting || g.isFailed).length
+          const live = x.endedAt === undefined
+          return (
+            <Text key={`run-${x.id}`} color={live ? '#ffffff' : '#6f7173'}>
+              <Text color="#4d9eff">{runLabel(x.id)}</Text> {x.done}/{x.spawned} AGENTS{need > 0 ? <Text color="#ff3a5d"> {need} NEED YOU</Text> : ''} <Text color={live ? '#00ed95' : '#6f7173'}>{mmss((x.endedAt ?? now) - x.startedAt)}</Text>{live ? '' : ' DONE'}
+            </Text>
+          )
+        })}
         {title('WORK')}
         <Image key="work" source={workPic} columns={workCols} rows={WORK_ROWS} alt={`${w.branch} ${w.worktree} ${w.isPlanning ? 'plan' : 'build'}`} />
         {w.goal !== '' && (

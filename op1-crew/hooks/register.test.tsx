@@ -14,8 +14,11 @@ const PANE = {
   },
 } as const
 
+const views: unknown[] = []
 const boot = async ($: any, on: any) => {
-  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  views.length = 0
+  on('agent.spawn', (_: any, e: any) => ({ model: 'haiku', agentId: `a${e.workflow?.agentIndex ?? e.tool_use_id ?? 1}` }))
+  on('ui.view', (_: any, e: any) => { views.push(e); return { value: {} } })
   on('command.register', () => ({ value: { command: 'crew' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
@@ -25,6 +28,7 @@ const boot = async ($: any, on: any) => {
   on('clock.every', () => ({ value: {} }))
   on('clock.now', () => ({ value: 1_700_000_000_000 }))
   on('session.measure', (_: any, e: any) => ({ changed: e.changed }))
+  on('classic.SubagentStop', () => ({}))
   on('session.cwd', () => ({ value: '/' }))
   on('session.root', () => ({ value: '/' }))
   on('process.run', () => ({ value: { exitCode: 1, stdout: '' } }))
@@ -68,8 +72,8 @@ test('workflow agents sharing one Workflow call each get their own figure', asyn
   await $.agent.spawn({ ...shared, workflow: { runId: 'wf_1', agentIndex: 2 } } as any)
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  expect((await ui.find({ type: 'Image', key: 'guy-wf_1#1' }))?.props.alt).toBe('GENERAL-PURPOSE think')
-  expect((await ui.find({ type: 'Image', key: 'guy-wf_1#2' }))?.props.alt).toBe('GENERAL-PURPOSE think')
+  expect((await ui.find({ type: 'Image', key: 'guy-wf_1#1' }))?.props.alt).toBe('GENERAL#1 think')
+  expect((await ui.find({ type: 'Image', key: 'guy-wf_1#2' }))?.props.alt).toBe('GENERAL#2 think')
   await ui.unmount()
 })
 
@@ -92,5 +96,44 @@ test('the rate-limit windows light ladders beside CTX', async ($, on) => {
 
   const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 80 }, surface: 'terminal' })
   expect((await ui.find({ type: 'Image', key: 'machine' }))?.props.alt).toMatch(/ctx 62% 5H 38% 7D 92%$/)
+  await ui.unmount()
+})
+
+
+test('a workflow run shows a RUN row that counts stops and ends with the Workflow call', async ($, on) => {
+  await boot($, on)
+  const shared = { tool_use_id: 'toolu_wf', prompt: 'probe', description: 'probe', subagentType: 'general-purpose' }
+  for (const i of [1, 2, 3]) await $.agent.spawn({ ...shared, workflow: { runId: 'wf_abc1', agentIndex: i } } as any)
+  await $.classic.SubagentStop({ agent_id: 'a1' } as any)
+  await $.classic.SubagentStop({ agent_id: 'a2' } as any)
+
+  let ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /WF_ABC1/ }))?.text).toMatch(/WF_ABC1 2\/3 AGENTS 00:00$/)
+  await ui.unmount()
+
+  await $.tool.call({ tool: 'Workflow', script: 'export const meta = {}' } as any)
+  ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /WF_ABC1/ }))?.text).toMatch(/DONE$/)
+  await ui.unmount()
+})
+
+test('past nine helpers the crew collapses to one figure per kind with a count', async ($, on) => {
+  await boot($, on)
+  for (let i = 0; i < 12; i++) await $.agent.spawn({ tool_use_id: `t${i}`, prompt: 'look', description: 'look', subagentType: 'Explore' } as any)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Image', key: 'guy-kind-explore' }))?.props.alt).toBe('EXPLORE ×12 think')
+  expect((await ui.findAll({ type: 'Image' })).filter((el: any) => String(el.key ?? '').startsWith('guy-')).length).toBe(1)
+  await ui.unmount()
+})
+
+test('pressing a name puts that agent in view; the lead returns to the main view', async ($, on) => {
+  await boot($, on)
+  await $.agent.spawn({ tool_use_id: 't1', prompt: 'look', description: 'look', subagentType: 'Explore' } as any)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ plugin: 'op1-crew', key: 'view-t1' })
+  await ui.press({ plugin: 'op1-crew', key: 'view-lead' })
+  expect(views).toEqual([{ agentId: 'at1' }, {}])
   await ui.unmount()
 })
