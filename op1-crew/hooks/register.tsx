@@ -74,7 +74,7 @@ const CHANNELS: [string, RegExp][] = [
   ['EDIT', /^(Edit|Write|MultiEdit|NotebookEdit)$/],
   ['SHELL', /^(Bash|Monitor|BashOutput|KillShell)$/],
   ['WEB', /^(WebFetch|WebSearch)$/],
-  ['AGENT', /^(Agent|Task|SendMessage)$/],
+  ['AGENT', /^(Agent|Task|SendMessage|Workflow)$/],
   ['SKILL', /^Skill$/],
   ['MCP', /^mcp__/],
 ]
@@ -116,7 +116,10 @@ export const register: Register = on => {
     // state outlives a reload: bring entries the earlier version wrote up to this shape
     await update($, crew, list => {
       const fixed = list.map(g => ({ ...LEAD, ...g, color: asRgb(g.color as unknown), kind: g.kind ?? (g.id === 'lead' ? 'lead' : kindOf(g.name)) }))
-      return fixed.some(g => g.id === 'lead') ? fixed : [LEAD, ...fixed]
+      // an earlier version keyed a workflow run's agents by one shared id; a pane with two of a key is refused
+      const seen = new Set<string>()
+      const unique = fixed.filter(g => !seen.has(g.id) && seen.add(g.id))
+      return unique.some(g => g.id === 'lead') ? unique : [LEAD, ...unique]
     })
     await update($, ticker, () => [])
     const [model, count] = await Promise.all([$.session.model(), $.session.turns()])
@@ -328,8 +331,10 @@ export const register: Register = on => {
 
   on('agent.spawn', async ($, e, next) => {
     const list = await read($, crew)
+    // a workflow run's agents all share the Workflow call's tool_use_id: the agent index tells them apart
+    const id = e.workflow ? `${e.workflow.runId || e.tool_use_id}#${e.workflow.agentIndex}` : e.tool_use_id || `${list.length}`
     const guy: Guy = {
-      id: e.tool_use_id || `${list.length}`,
+      id,
       kind: kindOf(e.subagentType || ''),
       name: (e.subagentType || 'helper').toUpperCase(),
       color: CREW_COLORS[list.length % CREW_COLORS.length] ?? WHITE,

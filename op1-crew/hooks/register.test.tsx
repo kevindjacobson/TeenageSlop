@@ -58,3 +58,25 @@ test('a Bash call lights the SHELL gauge', async ($, on) => {
   expect((await ui.find({ type: 'Text', text: /ls/ }))?.text).toMatch(/● 00:00 {3} ls$/)
   await ui.unmount()
 })
+
+test('workflow agents sharing one Workflow call each get their own figure', async ($, on) => {
+  await boot($, on)
+
+  const shared = { tool_use_id: 'toolu_wf', prompt: 'probe', description: 'probe', subagentType: 'general-purpose' }
+  await $.agent.spawn({ ...shared, workflow: { runId: 'wf_1', agentIndex: 1 } } as any)
+  await $.agent.spawn({ ...shared, workflow: { runId: 'wf_1', agentIndex: 2 } } as any)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Image', key: 'guy-wf_1#1' }))?.props.alt).toBe('GENERAL-PURPOSE think')
+  expect((await ui.find({ type: 'Image', key: 'guy-wf_1#2' }))?.props.alt).toBe('GENERAL-PURPOSE think')
+  await ui.unmount()
+})
+
+test('a Workflow call lights the AGENT gauge', async ($, on) => {
+  await boot($, on)
+  await $.tool.call({ tool: 'Workflow', script: 'export const meta = {}' } as any)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Image', key: 'dial-AGENT' }))?.props.alt).toBe('AGENT 1')
+  await ui.unmount()
+})
