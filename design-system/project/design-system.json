@@ -1,21 +1,142 @@
 {
  "v": 3,
- "layout": "files",
- "createdOnFiles": {
-  "v": 1,
-  "at": "2026-10-22T02:10:49Z"
- },
- "title": "OP-1 Crew",
- "namespace": "Op1Crew",
- "libraries": [],
- "sections": {},
- "groups": [
-  "Athletes"
- ],
  "assetGroups": {
   "Athletes": {
+   "files": {
+    "explore-idle.svg": {
+     "blob": "02a4237e677fe38777ed7d1188a21ff8",
+     "name": "explore-idle.svg",
+     "size": 3004,
+     "type": "image/svg+xml"
+    },
+    "explore-work.svg": {
+     "blob": "b872871a9282749f66e91644579be99c",
+     "name": "explore-work.svg",
+     "size": 3532,
+     "type": "image/svg+xml"
+    },
+    "general-purpose-idle.svg": {
+     "blob": "b8ee8b8e30608455ae9772f653b48135",
+     "name": "general-purpose-idle.svg",
+     "size": 3209,
+     "type": "image/svg+xml"
+    },
+    "general-purpose-work.svg": {
+     "blob": "7d8dba04838f2fe44f080c74b7c02570",
+     "name": "general-purpose-work.svg",
+     "size": 3406,
+     "type": "image/svg+xml"
+    },
+    "guide-idle.svg": {
+     "blob": "713303e668a45c8e7eafc2720702ba20",
+     "name": "guide-idle.svg",
+     "size": 3412,
+     "type": "image/svg+xml"
+    },
+    "guide-work.svg": {
+     "blob": "caa7deffd27f270afc7c434b296d974e",
+     "name": "guide-work.svg",
+     "size": 3582,
+     "type": "image/svg+xml"
+    },
+    "lead-done.svg": {
+     "blob": "d29991497a495c6a579d1664f099fc5a",
+     "name": "lead-done.svg",
+     "size": 3378,
+     "type": "image/svg+xml"
+    },
+    "lead-fail.svg": {
+     "blob": "f2f65fdc201deec165f8942876d48235",
+     "name": "lead-fail.svg",
+     "size": 3138,
+     "type": "image/svg+xml"
+    },
+    "lead-idle.svg": {
+     "blob": "542db0b17a5085960d5be7e4d8d239af",
+     "name": "lead-idle.svg",
+     "size": 4008,
+     "type": "image/svg+xml"
+    },
+    "lead-think.svg": {
+     "blob": "0818f5628a1a809c01b6ac0c3a47815b",
+     "name": "lead-think.svg",
+     "size": 3506,
+     "type": "image/svg+xml"
+    },
+    "lead-wait.svg": {
+     "blob": "c8254baef51ab475f1202bf9cb7ed461",
+     "name": "lead-wait.svg",
+     "size": 3211,
+     "type": "image/svg+xml"
+    },
+    "lead-work.svg": {
+     "blob": "650996d0f70a9f3b46418436b8e5f13e",
+     "name": "lead-work.svg",
+     "size": 3788,
+     "type": "image/svg+xml"
+    },
+    "other-idle.svg": {
+     "blob": "32461249c903dc01d66b33c94d0145fd",
+     "name": "other-idle.svg",
+     "size": 4120,
+     "type": "image/svg+xml"
+    },
+    "other-work.svg": {
+     "blob": "acf33df1f4c8f8acf33088183b83f929",
+     "name": "other-work.svg",
+     "size": 4739,
+     "type": "image/svg+xml"
+    },
+    "plan-idle.svg": {
+     "blob": "811c647c6003fac908e0ae5df3e2c5f8",
+     "name": "plan-idle.svg",
+     "size": 3358,
+     "type": "image/svg+xml"
+    },
+    "plan-work.svg": {
+     "blob": "b206fb0da49c429c907939b23c016a6d",
+     "name": "plan-work.svg",
+     "size": 3748,
+     "type": "image/svg+xml"
+    },
+    "review-idle.svg": {
+     "blob": "237ccfd1d2308ef581247bab4162ae7c",
+     "name": "review-idle.svg",
+     "size": 4000,
+     "type": "image/svg+xml"
+    },
+    "review-work.svg": {
+     "blob": "732800ebdae8286b970024d1de5b4ed5",
+     "name": "review-work.svg",
+     "size": 4061,
+     "type": "image/svg+xml"
+    },
+    "status-idle.svg": {
+     "blob": "db37107a0a5d8e6f631f87ec0ceb5bc0",
+     "name": "status-idle.svg",
+     "size": 3232,
+     "type": "image/svg+xml"
+    },
+    "status-work.svg": {
+     "blob": "9b37ef737eb70aae23d3936b8ddad15a",
+     "name": "status-work.svg",
+     "size": 3415,
+     "type": "image/svg+xml"
+    },
+    "workflow-idle.svg": {
+     "blob": "f5e0cf8f1f1bcfacf44c55e94cb685a7",
+     "name": "workflow-idle.svg",
+     "size": 3210,
+     "type": "image/svg+xml"
+    },
+    "workflow-work.svg": {
+     "blob": "5b7ecfd7ce951eaf509f23ac52d63246",
+     "name": "workflow-work.svg",
+     "size": 3581,
+     "type": "image/svg+xml"
+    }
+   },
    "name": "Athletes",
-   "tile": "m",
    "order": [
     "explore-idle.svg",
     "explore-work.svg",
@@ -40,151 +161,39 @@
     "workflow-idle.svg",
     "workflow-work.svg"
    ],
-   "files": {
-    "explore-idle.svg": {
-     "name": "explore-idle.svg",
-     "blob": "02a4237e677fe38777ed7d1188a21ff8",
-     "size": 3004,
-     "type": "image/svg+xml"
-    },
-    "explore-work.svg": {
-     "name": "explore-work.svg",
-     "blob": "b872871a9282749f66e91644579be99c",
-     "size": 3532,
-     "type": "image/svg+xml"
-    },
-    "general-purpose-idle.svg": {
-     "name": "general-purpose-idle.svg",
-     "blob": "b8ee8b8e30608455ae9772f653b48135",
-     "size": 3209,
-     "type": "image/svg+xml"
-    },
-    "general-purpose-work.svg": {
-     "name": "general-purpose-work.svg",
-     "blob": "7d8dba04838f2fe44f080c74b7c02570",
-     "size": 3406,
-     "type": "image/svg+xml"
-    },
-    "guide-idle.svg": {
-     "name": "guide-idle.svg",
-     "blob": "713303e668a45c8e7eafc2720702ba20",
-     "size": 3412,
-     "type": "image/svg+xml"
-    },
-    "guide-work.svg": {
-     "name": "guide-work.svg",
-     "blob": "caa7deffd27f270afc7c434b296d974e",
-     "size": 3582,
-     "type": "image/svg+xml"
-    },
-    "lead-done.svg": {
-     "name": "lead-done.svg",
-     "blob": "d29991497a495c6a579d1664f099fc5a",
-     "size": 3378,
-     "type": "image/svg+xml"
-    },
-    "lead-fail.svg": {
-     "name": "lead-fail.svg",
-     "blob": "f2f65fdc201deec165f8942876d48235",
-     "size": 3138,
-     "type": "image/svg+xml"
-    },
-    "lead-idle.svg": {
-     "name": "lead-idle.svg",
-     "blob": "542db0b17a5085960d5be7e4d8d239af",
-     "size": 4008,
-     "type": "image/svg+xml"
-    },
-    "lead-think.svg": {
-     "name": "lead-think.svg",
-     "blob": "0818f5628a1a809c01b6ac0c3a47815b",
-     "size": 3506,
-     "type": "image/svg+xml"
-    },
-    "lead-wait.svg": {
-     "name": "lead-wait.svg",
-     "blob": "c8254baef51ab475f1202bf9cb7ed461",
-     "size": 3211,
-     "type": "image/svg+xml"
-    },
-    "lead-work.svg": {
-     "name": "lead-work.svg",
-     "blob": "650996d0f70a9f3b46418436b8e5f13e",
-     "size": 3788,
-     "type": "image/svg+xml"
-    },
-    "other-idle.svg": {
-     "name": "other-idle.svg",
-     "blob": "32461249c903dc01d66b33c94d0145fd",
-     "size": 4120,
-     "type": "image/svg+xml"
-    },
-    "other-work.svg": {
-     "name": "other-work.svg",
-     "blob": "acf33df1f4c8f8acf33088183b83f929",
-     "size": 4739,
-     "type": "image/svg+xml"
-    },
-    "plan-idle.svg": {
-     "name": "plan-idle.svg",
-     "blob": "811c647c6003fac908e0ae5df3e2c5f8",
-     "size": 3358,
-     "type": "image/svg+xml"
-    },
-    "plan-work.svg": {
-     "name": "plan-work.svg",
-     "blob": "b206fb0da49c429c907939b23c016a6d",
-     "size": 3748,
-     "type": "image/svg+xml"
-    },
-    "review-idle.svg": {
-     "name": "review-idle.svg",
-     "blob": "237ccfd1d2308ef581247bab4162ae7c",
-     "size": 4000,
-     "type": "image/svg+xml"
-    },
-    "review-work.svg": {
-     "name": "review-work.svg",
-     "blob": "732800ebdae8286b970024d1de5b4ed5",
-     "size": 4061,
-     "type": "image/svg+xml"
-    },
-    "status-idle.svg": {
-     "name": "status-idle.svg",
-     "blob": "db37107a0a5d8e6f631f87ec0ceb5bc0",
-     "size": 3232,
-     "type": "image/svg+xml"
-    },
-    "status-work.svg": {
-     "name": "status-work.svg",
-     "blob": "9b37ef737eb70aae23d3936b8ddad15a",
-     "size": 3415,
-     "type": "image/svg+xml"
-    },
-    "workflow-idle.svg": {
-     "name": "workflow-idle.svg",
-     "blob": "f5e0cf8f1f1bcfacf44c55e94cb685a7",
-     "size": 3210,
-     "type": "image/svg+xml"
-    },
-    "workflow-work.svg": {
-     "name": "workflow-work.svg",
-     "blob": "5b7ecfd7ce951eaf509f23ac52d63246",
-     "size": 3581,
-     "type": "image/svg+xml"
-    }
-   }
+   "tile": "m"
   }
  },
  "blobs": {},
+ "createdOnFiles": {
+  "at": "2026-10-22T02:10:49Z",
+  "v": 1
+ },
  "docs": {
   "readme": "project/README.md",
   "sections": []
  },
+ "groups": [
+  "Athletes"
+ ],
  "lastChange": {
   "by": "Kevin Jacobson",
-  "at": "2026-10-22T02:10:49Z",
+  "at": "2026-10-22T02:59:35Z",
   "via": "Claude Code",
-  "note": "first build from the op1-crew mod source"
- }
+  "note": "live previews: a React bundle for the nine components"
+ },
+ "layout": "files",
+ "libraries": [
+  {
+   "name": "react",
+   "version": "18"
+  },
+  {
+   "name": "react-dom",
+   "version": "18"
+  }
+ ],
+ "namespace": "Op1Crew",
+ "sections": {},
+ "title": "OP-1 Crew"
 }

@@ -1,0 +1,21 @@
+/* OP-1 Crew components: everything on ground, in the stroke font, on the 8x16 cell */
+.op1-cap{font-family:var(--font-stroke);font-size:14px;letter-spacing:.08em;color:var(--grey);text-transform:uppercase}
+.op1-chip{display:inline-block;height:28px;line-height:26px;padding:0 10px;border:2px solid;font-family:var(--font-stroke);font-size:18px;letter-spacing:.06em;box-sizing:border-box;white-space:nowrap}
+.op1-ladder{display:flex;flex-direction:column;gap:6px;align-items:center}
+.op1-val{font-family:var(--font-stroke);font-size:14px;letter-spacing:.08em;color:var(--white)}
+.op1-pips{display:flex;flex-direction:column-reverse;gap:4px;width:20px}
+.op1-pip{display:block;height:6px}
+.op1-clock{display:flex;align-items:flex-end;gap:12px;font-family:var(--font-stroke)}
+.op1-clock-col{display:flex;flex-direction:column}
+.op1-timer{font-size:42px;line-height:48px}
+.op1-turnbox{font-size:28px;line-height:48px;color:var(--orange)}
+.op1-dial{display:flex;flex-direction:column;align-items:center;width:96px;font-family:var(--font-stroke)}
+.op1-dial svg{display:block}
+.op1-reading{font-size:35px;line-height:40px}
+.op1-title{display:flex;align-items:center;gap:8px;min-width:240px}
+.op1-title hr{flex:1;border:0;border-top:1px solid var(--dim);margin:0}
+.op1-figure{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:112px}
+.op1-figure svg{width:96px;height:96px;display:block}
+.op1-tasks{display:flex;gap:16px;align-items:flex-start}
+.op1-count{font-family:var(--font-stroke);font-size:21px;line-height:32px;color:var(--white)}
+.op1-row{font-family:var(--font-terminal);font-size:14px;line-height:20px;white-space:pre}
