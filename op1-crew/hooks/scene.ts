@@ -57,8 +57,9 @@ export const drawMachine = (columns: number, rows: number, s: MachineState) => {
   const midY = H / 2
 
   // ladders, flush right: the rate-limit windows outermost, CTX nearest the chips.
-  // Each is a caption, its value, then pips lit from the bottom; the last two
-  // pips of any ladder are red when lit (a rule by position, from the design system)
+  // Each is a caption, its value, then pips lit from the bottom. Pips are green;
+  // from 60% the top lit pip is white as a warning; the last two pips of any
+  // ladder are red when lit (the design system's Ladder rule)
   const ladderW = 10
   const top = 24 // caption and value above
   const segs = Math.max(4, Math.floor((H - top - 4) / 5))
@@ -69,10 +70,10 @@ export const drawMachine = (columns: number, rows: number, s: MachineState) => {
     c.text(right - Canvas.textWidth(label, 2), 2, label, GREY, 2)
     c.text(right - Canvas.textWidth(value, 2), 13, value, WHITE, 2)
     const lit = Math.round((percent / 100) * segs)
+    const pip = (i: number) => (i >= segs - 2 ? RED : i === lit - 1 && percent >= 60 ? WHITE : GREEN)
     for (let i = 0; i < segs; i++) {
       const y = H - 4 - i * 5
-      const on = i < lit
-      c.fill(right - ladderW, y - 3, ladderW, 3, on ? (i >= segs - 2 ? RED : GREEN) : DIM)
+      c.fill(right - ladderW, y - 3, ladderW, 3, i < lit ? pip(i) : DIM)
     }
     right -= w + 8
   }
