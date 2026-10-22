@@ -608,13 +608,15 @@ export const register: Register = on => {
             <Text color="#6f7173">GOAL </Text>{short(w.goal, width - 5)}
           </Text>
         )}
-        {title('TASKS')}
-        <Box flexDirection="row">
-          <Image key="tasks" source={taskLine} columns={TASKS_COLS} rows={TASK_ROWS} alt={`tasks ${done}/${list.length}`} />
-          <Box paddingTop={1}>
-            <Text color="#6f7173">{list.length === 0 ? 'no tasks' : short(nodes, width - TASKS_COLS - 1)}</Text>
+        {list.length > 0 && title('TASKS')}
+        {list.length > 0 && (
+          <Box flexDirection="row">
+            <Image key="tasks" source={taskLine} columns={TASKS_COLS} rows={TASK_ROWS} alt={`tasks ${done}/${list.length}`} />
+            <Box paddingTop={1}>
+              <Text color="#6f7173">{short(nodes, width - TASKS_COLS - 1)}</Text>
+            </Box>
           </Box>
-        </Box>
+        )}
         {list.slice(-10).map(x => (
           <Text key={`t${x.id}`} color={x.status === 'completed' ? '#6f7173' : x.status === 'in_progress' ? '#ff3a5d' : '#ffffff'}>
             {x.status === 'completed' ? '●' : x.status === 'in_progress' ? (f % 2 ? '◉' : '○') : '○'} {short(x.text, width - 2)}

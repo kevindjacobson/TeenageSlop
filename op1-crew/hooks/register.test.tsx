@@ -58,11 +58,13 @@ test('a spawned subagent joins the crew as a figure and a todo becomes a task', 
   await ui.unmount()
 })
 
-test('a Bash call lights the SHELL gauge', async ($, on) => {
+test('a Bash call lights the SHELL gauge, and with no tasks there is no TASKS zone', async ($, on) => {
   await boot($, on)
   await $.tool.call({ tool: 'Bash', command: 'ls' })
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ type: 'Image', key: 'tasks' })).toBeUndefined()
+  expect(await ui.find({ type: 'Image', key: 'title-TASKS' })).toBeUndefined()
   expect((await ui.find({ type: 'Image', key: 'dial-SHELL' }))?.props.alt).toBe('SHELL 1')
   expect((await ui.find({ type: 'Image', key: 'clock' }))?.props.alt).toBe('turn 3 idle')
   expect((await ui.find({ type: 'Text', text: /ls/ }))?.text).toMatch(/● 00:00 {3} ls$/)
