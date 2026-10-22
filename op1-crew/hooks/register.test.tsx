@@ -15,13 +15,10 @@ const PANE = {
 } as const
 
 const views: unknown[] = []
-// what the model stream beneath yields in a test, set per test before $.turn.step
-let stepChunks: any[] = []
 const boot = async ($: any, on: any) => {
   views.length = 0
-  stepChunks = []
   on('turn.start', (_: any, e: any) => ({ turnId: e.turnId ?? 'turn1' }))
-  on('turn.step', async function* (_: any, e: any) { for (const c of stepChunks) yield c; return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], usage: null } })
+  on('turn.complete', (_: any, e: any) => ({ text: e.text ?? '', usage: e.usage }))
   on('agent.spawn', (_: any, e: any) => ({ model: 'haiku', agentId: `a${e.workflow?.agentIndex ?? e.tool_use_id ?? 1}` }))
   on('ui.view', (_: any, e: any) => { views.push(e); return { value: {} } })
   on('command.register', () => ({ value: { command: 'crew' } }))
@@ -145,23 +142,13 @@ test('pressing a name puts that agent in view; the lead returns to the main view
   await ui.unmount()
 })
 
-test('the lead poses follow the stream, and the STEP row reads the stop', async ($, on) => {
+test('a completed turn leaves the lead standing by', async ($, on) => {
   await boot($, on)
   await $.turn.start({ turnId: 'turn1', prompt: 'go' } as any)
-  const usage = { input_tokens: 10, output_tokens: 1200, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, model: 'claude-sonnet-5-5' }
-  stepChunks = [
-    { kind: 'thinking', index: 0, text: 'hm' },
-    { kind: 'text', index: 1, text: 'Let me look.' },
-    { kind: 'tool', index: 2, id: 'toolu_1', name: 'Bash' },
-    { kind: 'stop', stopReason: 'tool_use', usage },
-  ]
-  const stream = $.turn.step({ turnId: 'turn1', index: 2, model: 'claude-opus-5-5', messageCount: 3 } as any)
-  const kinds: string[] = []
-  for await (const chunk of stream as any) kinds.push(chunk.kind)
-  expect(kinds).toEqual(['thinking', 'text', 'tool', 'stop'])
+  await $.turn.complete({ turnId: 'turn1', reason: 'answered', text: 'done' } as any)
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  expect((await ui.find({ type: 'Image', key: 'lead' }))?.props.alt).toBe('lead work')
-  expect((await ui.find({ type: 'Text', text: /STEP 03/ }))?.text).toMatch(/STEP 03 SONNET TOOL STOP TOOL_USE 1\.2K OUT$/)
+  expect((await ui.find({ type: 'Image', key: 'lead' }))?.props.alt).toBe('lead idle')
+  expect((await ui.find({ type: 'Image', key: 'clock' }))?.props.alt).toBe('turn 3 idle')
   await ui.unmount()
 })

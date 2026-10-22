@@ -25,14 +25,14 @@ const tracks = atom({ plugin: 'op1-crew', key: 'tracks' } as const, [])
 const meters = atom({ plugin: 'op1-crew', key: 'meters' } as const, {})
 const ticker = atom({ plugin: 'op1-crew', key: 'ticker' } as const, [])
 const frame = atom({ plugin: 'op1-crew', key: 'frame' } as const, 0)
-const turn = atom({ plugin: 'op1-crew', key: 'turn' } as const, { isActive: false, startedAt: 0, elapsed: 0, count: 0, step: 0, stepModel: '', phase: '' as Turn['phase'], stopReason: '', outTokens: 0 })
+const turn = atom({ plugin: 'op1-crew', key: 'turn' } as const, { isActive: false, startedAt: 0, elapsed: 0, count: 0 })
 const machine = atom({ plugin: 'op1-crew', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0, limits: [] as Limit[] })
 const shells = atom({ plugin: 'op1-crew', key: 'shells' } as const, [])
 const work = atom({ plugin: 'op1-crew', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
 const runs = atom({ plugin: 'op1-crew', key: 'runs' } as const, [] as Run[])
 
 // the shapes newer fields take when an older version's state comes back from the store
-const withTurnDefaults = (t: Partial<Turn>): Turn => ({ isActive: false, startedAt: 0, elapsed: 0, count: 0, step: 0, stepModel: '', phase: '', stopReason: '', outTokens: 0, ...t })
+const withTurnDefaults = (t: Partial<Turn>): Turn => ({ isActive: false, startedAt: 0, elapsed: 0, count: 0, ...t })
 const withMachineDefaults = (m: Partial<Machine>): Machine => ({ model: '', mode: '', ctxPercent: 0, limits: [], ...m })
 
 // the crew shows at most this many figures; past it, helpers collapse to one figure per kind
@@ -91,9 +91,6 @@ const CHANNELS: [string, RegExp][] = [
 ]
 // the window names the engine reports, as two-character captions
 const limitLabel = (kind: string) => (kind === 'five_hour' ? '5H' : kind === 'seven_day' ? '7D' : kind.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 3))
-
-const shortModel = (model: string) => (/(fable|opus|sonnet|haiku)/i.exec(model)?.[1] ?? model).toUpperCase().slice(0, 6)
-const kilo = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n))
 
 const channelOf = (tool: string) => CHANNELS.find(([, re]) => re.test(tool))?.[0] ?? 'OTHER'
 
@@ -263,7 +260,7 @@ export const register: Register = on => {
   on('turn.start', async ($, e, next) => {
     if (e.agentId !== undefined) return next(e)
     const now = await $.clock.now()
-    await update($, turn, (t): Turn => ({ ...t, isActive: true, startedAt: now, elapsed: 0, step: 0, stepModel: '', phase: '', stopReason: '', outTokens: 0 }))
+    await update($, turn, t => ({ ...withTurnDefaults(t), isActive: true, startedAt: now, elapsed: 0 }))
     // finished helpers go home when a new turn starts
     await update($, crew, list =>
       list
@@ -275,40 +272,8 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // the main loop's model response, piece by piece: the lead's pose follows the kind of
-  // chunk arriving (thinking, text, a tool call) instead of being inferred between calls.
-  // Every chunk is passed on untouched; only a change of phase writes state.
-  on('turn.step', async function* ($, e, next) {
-    if (e.agentId !== undefined) return yield* next(e)
-    const index = Number(e.index)
-    const stepModel = String(e.model)
-    const fresh = (t: Turn): Turn => ({ ...t, step: index + 1, stepModel, phase: '', stopReason: '' })
-    await update($, turn, fresh)
-    let phase: Turn['phase'] = ''
-    const stream = next(e)
-    for await (const chunk of stream) {
-      if (chunk.kind === 'thinking' && phase !== 'thinking') {
-        phase = 'thinking'
-        await update($, turn, t => ({ ...t, phase }))
-        await setGuy($, byAgent(), g => ({ ...g, isBusy: true, tool: undefined, job: 'thinking' }))
-      } else if (chunk.kind === 'text' && phase !== 'text') {
-        phase = 'text'
-        await update($, turn, t => ({ ...t, phase }))
-        await setGuy($, byAgent(), g => ({ ...g, isBusy: true, tool: 'writing', job: 'writing' }))
-      } else if (chunk.kind === 'tool') {
-        phase = 'tool'
-        await update($, turn, t => ({ ...t, phase }))
-        await setGuy($, byAgent(), g => ({ ...g, isBusy: true, tool: chunk.name, job: 'working' }))
-      } else if (chunk.kind === 'stop') {
-        const out = chunk.usage?.output_tokens ?? 0
-        const model = chunk.usage?.model
-        const stopReason = String(chunk.stopReason ?? '')
-        await update($, turn, t => ({ ...withTurnDefaults(t), stopReason, outTokens: (t.outTokens ?? 0) + out, stepModel: model || t.stepModel }))
-      }
-      yield chunk
-    }
-    return await stream.result
-  })
+  // No turn.step hook: a streaming hook relays every chunk of the response through the
+  // plugin's environment, which slowed the whole TUI. What a turn cost comes from turn.complete.
 
   on('classic.UserPromptSubmit', async ($, e, next) => {
     if (e.permission_mode) await update($, machine, m => ({ ...m, mode: e.permission_mode ?? m.mode }))
@@ -325,7 +290,7 @@ export const register: Register = on => {
 
   on('turn.complete', async ($, e, next) => {
     if (!('agentId' in e && e.agentId)) {
-      await update($, turn, x => ({ ...x, isActive: false }))
+      await update($, turn, x => ({ ...withTurnDefaults(x), isActive: false }))
       await setGuy($, byAgent(), g => ({
         ...g,
         isBusy: false,
@@ -550,13 +515,6 @@ export const register: Register = on => {
             <Image key="machine" source={machinePic} columns={shownCols} rows={HEADER_ROWS} alt={[`${m.model} ${m.mode} ctx ${m.ctxPercent}%`, ...shown.limits.map(l => `${l.label} ${l.percent}%`)].join(' ')} />
           )}
         </Box>
-
-        {t.step > 0 && (
-          <Text color="#6f7173">
-            STEP {String(t.step).padStart(2, '0')} <Text color={shortModel(t.stepModel) === shortModel(m.model) ? '#ffffff' : '#ff3a5d'}>{shortModel(t.stepModel)}</Text>
-            {t.phase ? ` ${t.phase.toUpperCase()}` : ''}{t.stopReason ? ` STOP ${t.stopReason.toUpperCase()}` : ''}{t.outTokens ? ` ${kilo(t.outTokens)} OUT` : ''}
-          </Text>
-        )}
 
         {title('CREW')}
         <Box flexDirection="row">

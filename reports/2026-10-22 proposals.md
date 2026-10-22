@@ -12,7 +12,7 @@ Built, each on its own branch in a worktree, stacked in order; merge `feat/strea
 | --- | --- | --- |
 | 1 Rate-limit ladders (with the value and the warning-stage rule) | `feat/rate-limit-ladders` | `/Users/kj/Code/op1-crew-wt/ladders` |
 | 2 RUN zone, crowd rule, pressable names | `feat/run-zone` | `/Users/kj/Code/op1-crew-wt/run` |
-| 3 Poses from the stream, STEP row | `feat/stream-poses` | `/Users/kj/Code/op1-crew-wt/stream` |
+| 3 Poses from the stream, STEP row | `feat/stream-poses` | withdrawn after merging: a `turn.step` hook relays every chunk of the response through the plugin's environment and slowed the whole TUI. Reverted on main; the branch stays as the record. Never hook `turn.step` in this mod. |
 
 The engine's generated types under `op1-crew/.claude-plugin/types/` are git-ignored; copy them from the main checkout into a new worktree before `tsc`.
 
@@ -39,7 +39,7 @@ The engine's generated types under `op1-crew/.claude-plugin/types/` are git-igno
 - Click to view (Kevin, canvas comment): only `Button` is pressable in a pane, so the name under each figure becomes a `Button` with `key` = the guy id and a digit `hotkey`; `onPress: () => $.ui.view({ agentId })` puts that agent's transcript in the main view and routes the next Enter to it; `0` is `$.ui.view({})`. Applies to every helper, not only workflow agents.
 - Test: three workflow spawns and two stops render `2/3 AGENTS`.
 
-## 3. Poses from the stream (medium)
+## 3. Poses from the stream (withdrawn: too slow, see Status)
 
 - Hook: `turn.step`, main loop only (`e.agentId` undefined). On a `thinking` chunk set the lead `isBusy` with no tool (think pose); on a `tool` chunk set `tool` to the name before the call runs; on `stop` record `stopReason` and `usage`. Also show `e.model` when it differs from the session model (fallback) as a red chip.
 - State: extend `turn` with `step`, `stopReason`, `outTokens`, `stepModel`.
