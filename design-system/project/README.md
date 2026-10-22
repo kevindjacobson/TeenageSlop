@@ -59,6 +59,10 @@ Each zone opens with a `Title`: the word in `label` `grey`, then a `dim` rule to
 - Frames tick with the engine's clock; the pane redraws from memoised pictures, one per distinct input. Never animate a body; animate marks.
 - A live shell row alternates `▶` and `▷`. A waiting figure's `!` blinks every other frame.
 
+## Components
+
+The nine components are real code: `components/bundle.js` defines `window.Op1Crew` with `Chip`, `Ladder`, `Clock`, `Dial`, `Title`, `Figure`, `Tasks`, `Shell` and `Log` as React 18 components, styled by `components/bundle.css` from the tokens, with props in `components/index.d.ts`. On a page, load `tokens.css`, then `bundle.css`, then React 18 and `bundle.js`, and mount `Op1Crew.<Component>`. `Figure` carries the athlete strokes, so it needs no asset. The mod itself draws the same components as pixels in `op1-crew/hooks/scene.ts`; the bundle is their web rendering, kept in step by hand.
+
 ## Iconography
 
 There are no icons. Marks are glyphs the terminal already has: `▶ ▷ ■ ● ✕ ✋ ◆ ◀◀ +`, and the stroke font's `OK`, `X`, `!` drawn over a figure that lacks a pose. No emoji.

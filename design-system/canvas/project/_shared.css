@@ -7,7 +7,8 @@ body{margin:0}
 .row{font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:20px;white-space:pre}
 .lad{display:flex;flex-direction:column-reverse;gap:4px;width:20px}
 .lad i{display:block;height:6px;background:#2a2b2d}
-.lad i.g{background:#00ed95}.lad i.o{background:#ff3a5d}.lad i.r{background:#ff3a5d}
+.lad i.g{background:#00ed95}.lad i.w{background:#ffffff}.lad i.r{background:#ff3a5d}
+.val{font-size:14px;letter-spacing:.08em;color:#ffffff}
 .col{display:flex;flex-direction:column;gap:6px;align-items:center}
 .fig{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:112px}
 .fig .cap{white-space:nowrap}
