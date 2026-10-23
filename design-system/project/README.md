@@ -61,7 +61,7 @@ Each zone opens with a `Title`: the word in `label` `grey`, then a `dim` rule to
 
 ## Components
 
-The nine components are real code: `components/bundle.js` defines `window.Op1Crew` with `Chip`, `Ladder`, `Clock`, `Dial`, `Title`, `Figure`, `Tasks`, `Shell` and `Log` as React 18 components, styled by `components/bundle.css` from the tokens, with props in `components/index.d.ts`. On a page, load `tokens.css`, then `bundle.css`, then React 18 and `bundle.js`, and mount `Op1Crew.<Component>`. `Figure` carries the athlete strokes, so it needs no asset. The mod itself draws the same components as pixels in `op1-crew/hooks/scene.ts`; the bundle is their web rendering, kept in step by hand.
+The nine components are real code: `components/bundle.js` defines `window.TeenageSlop` with `Chip`, `Ladder`, `Clock`, `Dial`, `Title`, `Figure`, `Tasks`, `Shell` and `Log` as React 18 components, styled by `components/bundle.css` from the tokens, with props in `components/index.d.ts`. On a page, load `tokens.css`, then `bundle.css`, then React 18 and `bundle.js`, and mount `TeenageSlop.<Component>`. `Figure` carries the athlete strokes, so it needs no asset. The mod itself draws the same components as pixels in `teenageslop/hooks/scene.ts`; the bundle is their web rendering, kept in step by hand.
 
 ## Iconography
 

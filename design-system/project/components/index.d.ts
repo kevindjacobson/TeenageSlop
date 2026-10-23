@@ -1,4 +1,4 @@
-// OP-1 Crew components: window.Op1Crew
+// TeenageSlop components: window.TeenageSlop
 export type Color = 'blue' | 'green' | 'white' | 'red' | 'orange' | 'grey'
 export type Pose = 'idle' | 'think' | 'work' | 'wait' | 'done' | 'fail'
 export type Kind = 'lead' | 'explore' | 'plan' | 'general-purpose' | 'guide' | 'review' | 'status' | 'workflow' | 'other'

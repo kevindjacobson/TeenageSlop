@@ -1,8 +1,8 @@
 import { expect, test } from 'claude-code/testing';
 const PANE = {
-    plugin: 'op1-crew',
+    plugin: 'teenageslop',
     component: 'Pane',
-    requestId: 'op1-crew',
+    requestId: 'teenageslop',
     props: {
         title: 'OP-1 · CREW',
         isFocused: false,

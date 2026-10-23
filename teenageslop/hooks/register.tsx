@@ -7,7 +7,7 @@ import { DIAL_ROWS, TASK_ROWS, WORK_ROWS, drawClock, drawDial, drawFigure, drawM
 import type { Pose } from './scene'
 import type { Limit, Guy, Machine, Run, Shell, Track, Turn, Work } from '../types'
 
-const PANE = 'op1-crew'
+const PANE = 'teenageslop'
 const TITLE = 'OP-1 · CREW'
 const CREW_COLORS = [GREEN, WHITE, ORANGE, BLUE]
 const HEADER_ROWS = 4
@@ -20,16 +20,16 @@ const LEAD_COLS = 14
 const LEAD_ROWS = 7
 const GUY_ROWS = 7
 
-const crew = atom({ plugin: 'op1-crew', key: 'crew' } as const, [])
-const tracks = atom({ plugin: 'op1-crew', key: 'tracks' } as const, [])
-const meters = atom({ plugin: 'op1-crew', key: 'meters' } as const, {})
-const ticker = atom({ plugin: 'op1-crew', key: 'ticker' } as const, [])
-const frame = atom({ plugin: 'op1-crew', key: 'frame' } as const, 0)
-const turn = atom({ plugin: 'op1-crew', key: 'turn' } as const, { isActive: false, startedAt: 0, elapsed: 0, count: 0 })
-const machine = atom({ plugin: 'op1-crew', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0, limits: [] as Limit[] })
-const shells = atom({ plugin: 'op1-crew', key: 'shells' } as const, [])
-const work = atom({ plugin: 'op1-crew', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
-const runs = atom({ plugin: 'op1-crew', key: 'runs' } as const, [] as Run[])
+const crew = atom({ plugin: 'teenageslop', key: 'crew' } as const, [])
+const tracks = atom({ plugin: 'teenageslop', key: 'tracks' } as const, [])
+const meters = atom({ plugin: 'teenageslop', key: 'meters' } as const, {})
+const ticker = atom({ plugin: 'teenageslop', key: 'ticker' } as const, [])
+const frame = atom({ plugin: 'teenageslop', key: 'frame' } as const, 0)
+const turn = atom({ plugin: 'teenageslop', key: 'turn' } as const, { isActive: false, startedAt: 0, elapsed: 0, count: 0 })
+const machine = atom({ plugin: 'teenageslop', key: 'machine' } as const, { model: '', mode: '', ctxPercent: 0, limits: [] as Limit[] })
+const shells = atom({ plugin: 'teenageslop', key: 'shells' } as const, [])
+const work = atom({ plugin: 'teenageslop', key: 'work' } as const, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' })
+const runs = atom({ plugin: 'teenageslop', key: 'runs' } as const, [] as Run[])
 
 // the shapes newer fields take when an older version's state comes back from the store
 const withTurnDefaults = (t: Partial<Turn>): Turn => ({ isActive: false, startedAt: 0, elapsed: 0, count: 0, ...t })
@@ -141,7 +141,7 @@ export const register: Register = on => {
     const [model, count] = await Promise.all([$.session.model(), $.session.turns()])
     await update($, machine, m => ({ ...m, model }))
     await update($, turn, t => ({ ...t, count }))
-    await $.command.register({ name: 'crew', description: 'Open the OP-1 crew pane' })
+    await $.command.register({ name: 'crew', description: 'Open the TeenageSlop pane' })
     await $.command.register({ name: 'crew-goal', description: 'Set the goal shown in the crew pane (empty clears it)', argumentHint: '<goal>' })
     await measureWork($ as unknown as WorkDollar)
     await syncTasks($)

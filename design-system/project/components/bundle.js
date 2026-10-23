@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Op1Crew","components":[{"name":"Chip"},{"name":"Ladder"},{"name":"Clock"},{"name":"Dial"},{"name":"Title"},{"name":"Figure"},{"name":"Tasks"},{"name":"Shell"},{"name":"Log"}]} */
+/* @ds-bundle: {"format":4,"namespace":"TeenageSlop","components":[{"name":"Chip"},{"name":"Ladder"},{"name":"Clock"},{"name":"Dial"},{"name":"Title"},{"name":"Figure"},{"name":"Tasks"},{"name":"Shell"},{"name":"Log"}]} */
 (function () {
   var React = window.React, h = React.createElement;
   var COLORS = { ground: 'var(--ground)', blue: 'var(--blue)', green: 'var(--green)', white: 'var(--white)', red: 'var(--red)', orange: 'var(--orange)', grey: 'var(--grey)', dim: 'var(--dim)' };
@@ -87,5 +87,5 @@
     }));
   }
 
-  window.Op1Crew = { Chip: Chip, Ladder: Ladder, Clock: Clock, Dial: Dial, Title: Title, Figure: Figure, Tasks: Tasks, Shell: Shell, Log: Log };
+  window.TeenageSlop = { Chip: Chip, Ladder: Ladder, Clock: Clock, Dial: Dial, Title: Title, Figure: Figure, Tasks: Tasks, Shell: Shell, Log: Log };
 })();

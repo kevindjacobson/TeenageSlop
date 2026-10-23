@@ -1,5 +1,5 @@
 {
-  "name": "op1-crew",
+  "name": "teenageslop",
   "version": "0.1.0",
   "description": "An OP-1 style side pane: a crew of little guys for the lead and each subagent, todos as tape tracks, tool use as mixer meters",
   "types": "./types/index.d.ts"

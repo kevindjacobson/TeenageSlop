@@ -1,10 +1,10 @@
 {
-  "name": "op1-crew",
+  "name": "teenageslop",
   "owner": { "name": "Kevin Jacobson" },
   "plugins": [
     {
-      "name": "op1-crew",
-      "source": "./op1-crew",
+      "name": "teenageslop",
+      "source": "./teenageslop",
       "description": "An OP-1 style side pane for Claude Code: the lead agent and subagents as line-art athletes, tasks, tool gauges, shell commands, branch and context"
     }
   ]

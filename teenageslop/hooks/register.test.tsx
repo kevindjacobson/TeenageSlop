@@ -1,9 +1,9 @@
 import { expect, test } from 'claude-code/testing'
 
 const PANE = {
-  plugin: 'op1-crew',
+  plugin: 'teenageslop',
   component: 'Pane',
-  requestId: 'op1-crew',
+  requestId: 'teenageslop',
   props: {
     title: 'OP-1 · CREW',
     isFocused: false,
@@ -136,8 +136,8 @@ test('pressing a name puts that agent in view; the lead returns to the main view
   await $.agent.spawn({ tool_use_id: 't1', prompt: 'look', description: 'look', subagentType: 'Explore' } as any)
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  await ui.press({ plugin: 'op1-crew', key: 'view-t1' })
-  await ui.press({ plugin: 'op1-crew', key: 'view-lead' })
+  await ui.press({ plugin: 'teenageslop', key: 'view-t1' })
+  await ui.press({ plugin: 'teenageslop', key: 'view-lead' })
   expect(views).toEqual([{ agentId: 'at1' }, {}])
   await ui.unmount()
 })

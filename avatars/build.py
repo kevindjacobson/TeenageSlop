@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bake avatars/svg/*.svg into a TypeScript polyline table for the op1-crew mod.
+"""Bake avatars/svg/*.svg into a TypeScript polyline table for the teenageslop mod.
 
 Each SVG is restricted (see README.md) to path M/L/C/Q/Z, polyline, line, circle and
 ellipse with absolute coordinates in a 0 0 64 64 viewBox, so this flattens every element

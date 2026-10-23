@@ -1,4 +1,4 @@
-/* OP-1 Crew components: everything on ground, in the stroke font, on the 8x16 cell */
+/* TeenageSlop components: everything on ground, in the stroke font, on the 8x16 cell */
 .op1-cap{font-family:var(--font-stroke);font-size:14px;letter-spacing:.08em;color:var(--grey);text-transform:uppercase}
 .op1-chip{display:inline-block;height:28px;line-height:26px;padding:0 10px;border:2px solid;font-family:var(--font-stroke);font-size:18px;letter-spacing:.06em;box-sizing:border-box;white-space:nowrap}
 .op1-ladder{display:flex;flex-direction:column;gap:6px;align-items:center}

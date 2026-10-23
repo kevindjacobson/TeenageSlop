@@ -1,7 +1,7 @@
 .DS_Store
 *.log
-op1-crew/.claude-plugin/types/
-op1-crew/.mcpb-cache/
+teenageslop/.claude-plugin/types/
+teenageslop/.mcpb-cache/
 avatars/reference/
 research_notes/OP-1 style terminal UI resources/reference_op1_screens.png
 research_notes/OP-1 style terminal UI resources/reference_op1_screens_2.png

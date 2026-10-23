@@ -38,7 +38,7 @@ export type Work = { cwd: string; branch: string; worktree: string; isPlanning: 
 
 declare module 'claude-code' {
   interface PluginState {
-    'op1-crew': {
+    'teenageslop': {
       crew: Guy[]
       tracks: Track[]
       meters: Record<string, number>

@@ -74,8 +74,8 @@
     {
       "artifact": "https://claude.ai/artifact/2KVaPJNLnUWwrS5itjbArQ",
       "copiedAt": "2026-10-22T02:10:49Z",
-      "namespace": "op1crew",
-      "title": "OP-1 Crew",
+      "namespace": "teenageslop",
+      "title": "TeenageSlop",
       "version": "1792635503-767a"
     }
   ],
@@ -120,5 +120,5 @@
     "Avatars.dc.html"
   ],
   "pages": [],
-  "title": "OP-1 Crew Proposals"
+  "title": "TeenageSlop Proposals"
 }

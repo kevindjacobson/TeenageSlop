@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code';
 import { BLUE, GREEN, ORANGE, WHITE } from './pixels';
 import { DIAL_ROWS, TASK_ROWS, WORK_ROWS, drawClock, drawDial, drawFigure, drawMachine, drawTasks, drawTitle, drawWork, gaugeLayout, kindOf } from './scene';
-const PANE = 'op1-crew';
+const PANE = 'teenageslop';
 const TITLE = 'OP-1 · CREW';
 const CREW_COLORS = [GREEN, WHITE, ORANGE, BLUE];
 const HEADER_ROWS = 4;
@@ -13,15 +13,15 @@ const LIMIT_COLS = 4; // columns one rate-limit ladder adds to the machine pictu
 const LEAD_COLS = 14;
 const LEAD_ROWS = 7;
 const GUY_ROWS = 7;
-const crew = atom({ plugin: 'op1-crew', key: 'crew' }, []);
-const tracks = atom({ plugin: 'op1-crew', key: 'tracks' }, []);
-const meters = atom({ plugin: 'op1-crew', key: 'meters' }, {});
-const ticker = atom({ plugin: 'op1-crew', key: 'ticker' }, []);
-const frame = atom({ plugin: 'op1-crew', key: 'frame' }, 0);
-const turn = atom({ plugin: 'op1-crew', key: 'turn' }, { isActive: false, startedAt: 0, elapsed: 0, count: 0 });
-const machine = atom({ plugin: 'op1-crew', key: 'machine' }, { model: '', mode: '', ctxPercent: 0, limits: [] });
-const shells = atom({ plugin: 'op1-crew', key: 'shells' }, []);
-const work = atom({ plugin: 'op1-crew', key: 'work' }, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' });
+const crew = atom({ plugin: 'teenageslop', key: 'crew' }, []);
+const tracks = atom({ plugin: 'teenageslop', key: 'tracks' }, []);
+const meters = atom({ plugin: 'teenageslop', key: 'meters' }, {});
+const ticker = atom({ plugin: 'teenageslop', key: 'ticker' }, []);
+const frame = atom({ plugin: 'teenageslop', key: 'frame' }, 0);
+const turn = atom({ plugin: 'teenageslop', key: 'turn' }, { isActive: false, startedAt: 0, elapsed: 0, count: 0 });
+const machine = atom({ plugin: 'teenageslop', key: 'machine' }, { model: '', mode: '', ctxPercent: 0, limits: [] });
+const shells = atom({ plugin: 'teenageslop', key: 'shells' }, []);
+const work = atom({ plugin: 'teenageslop', key: 'work' }, { cwd: '', branch: '', worktree: '', isPlanning: false, goal: '' });
 const syncTasks = async ($) => {
     try {
         const ran = await $.tool.call({ tool: 'TaskList' });
@@ -104,7 +104,7 @@ export const register = on => {
         const [model, count] = await Promise.all([$.session.model(), $.session.turns()]);
         await update($, machine, m => ({ ...m, model }));
         await update($, turn, t => ({ ...t, count }));
-        await $.command.register({ name: 'crew', description: 'Open the OP-1 crew pane' });
+        await $.command.register({ name: 'crew', description: 'Open the TeenageSlop pane' });
         await $.command.register({ name: 'crew-goal', description: 'Set the goal shown in the crew pane (empty clears it)', argumentHint: '<goal>' });
         await measureWork($);
         await syncTasks($);

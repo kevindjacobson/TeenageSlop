@@ -1,6 +1,6 @@
 # Proposals, 2026-10-22
 
-What to add to the mod next, each item sized for one agent in a parallel batch. Visual examples: the Design canvas "OP-1 Crew Proposals" (https://claude.ai/artifact/RGquZ52XT1xrgykNd97Uzy). Tokens, components and the figure contract: the design system "OP-1 Crew" (https://claude.ai/artifact/2KVaPJNLnUWwrS5itjbArQ), whose source is `design-system/project/` in this repo.
+What to add to the mod next, each item sized for one agent in a parallel batch. Visual examples: the Design canvas "TeenageSlop Proposals" (https://claude.ai/artifact/RGquZ52XT1xrgykNd97Uzy). Tokens, components and the figure contract: the design system "TeenageSlop" (https://claude.ai/artifact/2KVaPJNLnUWwrS5itjbArQ), whose source is `design-system/project/` in this repo.
 
 Every item: a hook in `register.tsx`, a state atom if new, a draw function in `scene.ts` where a picture is needed, a test in `register.test.tsx`, and `CLAUDE.md` updated if it adds a rule. Keep the vocabulary rule: labels are Claude Code's words.
 
@@ -10,11 +10,11 @@ Built, each on its own branch in a worktree, stacked in order; merge `feat/strea
 
 | Item | Branch | Worktree |
 | --- | --- | --- |
-| 1 Rate-limit ladders (with the value and the warning-stage rule) | `feat/rate-limit-ladders` | `/Users/kj/Code/op1-crew-wt/ladders` |
-| 2 RUN zone, crowd rule, pressable names | `feat/run-zone` | `/Users/kj/Code/op1-crew-wt/run` |
+| 1 Rate-limit ladders (with the value and the warning-stage rule) | `feat/rate-limit-ladders` | `/Users/kj/Code/TeenageSlop-wt/ladders` |
+| 2 RUN zone, crowd rule, pressable names | `feat/run-zone` | `/Users/kj/Code/TeenageSlop-wt/run` |
 | 3 Poses from the stream, STEP row | `feat/stream-poses` | withdrawn after merging: a `turn.step` hook relays every chunk of the response through the plugin's environment and slowed the whole TUI. Reverted on main; the branch stays as the record. Never hook `turn.step` in this mod. |
 
-The engine's generated types under `op1-crew/.claude-plugin/types/` are git-ignored; copy them from the main checkout into a new worktree before `tsc`.
+The engine's generated types under `teenageslop/.claude-plugin/types/` are git-ignored; copy them from the main checkout into a new worktree before `tsc`.
 
 ## 0. Done on main
 
@@ -73,7 +73,7 @@ Infrastructure (one agent):
 - `scene.ts`: `drawFigure` takes a `set` argument; `register.tsx` reads the chosen set from `$.store` (`set`), command `/crew-set <athletes|dogs|cats|birds|mice>`, memo keys include the set.
 - A set missing a kind or pose falls back to the athletes' drawing for that kind, so a half-finished set still runs.
 
-Drawings (one agent per set, 22 files each): follow `design-system/project/figures.md` for the SVG contract and the species table. Draw from the athlete file of the same kind and pose as the pose reference: same baseline, same box, same accents, body still. Validate with the existing avatars validator, bake, run `claude plugin test op1-crew`, and look at the pane in a 110-column Ghostty.
+Drawings (one agent per set, 22 files each): follow `design-system/project/figures.md` for the SVG contract and the species table. Draw from the athlete file of the same kind and pose as the pose reference: same baseline, same box, same accents, body still. Validate with the existing avatars validator, bake, run `claude plugin test teenageslop`, and look at the pane in a 110-column Ghostty.
 
 ## 9. Session timer (small)
 
