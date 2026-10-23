@@ -178,9 +178,9 @@
  ],
  "lastChange": {
   "by": "Kevin Jacobson",
-  "at": "2026-10-22T02:59:35Z",
+  "at": "2026-10-23T21:07:47Z",
   "via": "Claude Code",
-  "note": "live previews: a React bundle for the nine components"
+  "note": "renamed the system to TeenageSlop"
  },
  "layout": "files",
  "libraries": [
